@@ -1,5 +1,5 @@
 import httpx
-import selectolax
+from selectolax.parser import HTMLParser
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
@@ -64,8 +64,17 @@ class AmbossScraper:
 
     def parse(self, json_data):
         json_article = json_data[4]
-        formated_json = json.dumps(json_article, indent=2)
-        print(formated_json)
+        formatted_json = json.dumps(json_article, indent=2)
+        print(formatted_json)
+        abstract = HTMLParser(json_article['data']['currentUserArticles'][0]['article']['abstract']).text()
+        contents = []
+        for i in range(len(json_article['data']['currentUserArticles'][0]['article']['content'])):
+            content = HTMLParser(json_article['data']['currentUserArticles'][0]['article']['content'][i]['content']).text().strip()
+            contents.append(content)
+        main_article = ''.join(contents)
+        print(abstract)
+        print('===================================')
+        print(main_article)
 
     def main(self):
         # print(f'Preaparation...')
