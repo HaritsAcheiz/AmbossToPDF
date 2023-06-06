@@ -62,20 +62,47 @@ class AmbossScraper:
         formatted_json = json.dumps(json_article, indent=2)
         print(formatted_json)
         title = json_article['title'].strip()
+        print(title)
+
         synonyms_list = json_article['synonyms']
         synonyms = ', '.join(synonyms_list)
+        print(synonyms)
+
+        updated_date = json_article['updatedDate']
+        print(updated_date)
+
         for i in range(len(json_article['content'])):
             print(f'==================={i}====================')
             nav = json_article['content'][i]['title']
             content = HTMLParser(json_article['content'][i]['content'])
-            tags = content.css_matches(['p', 'h3', 'img', 'li'])
+            # elements = content.css('p, span.api.explanation, span[data-type="highlight"], span.leitwort, span[data-type="image"], li')
+            elements = content.css(
+                'p, p > span.api.explanation, p > span.leitwort, p > span[data-type="image"], p > span[data-type="highlight"], li')
+
             print(nav)
-            for tag in tags:
-                if tag.strip_tags() == 'p':
-                    p_text = tag.text().strip()
-                    print(p_text)
-
-
+            for element in elements:
+                if element.tag == 'p':
+                    p = element.text().strip()
+                    print(p)
+                elif element.tag == 'a':
+                    a = element.text().strip()
+                    print(a)
+                elif element.tag == 'span':
+                    if element.attributes['data-type'] == 'image':
+                        img = element.attributes['data-source']
+                        print(img)
+                    elif element.attributes['class'] == 'api explanation':
+                        span_explanation = element.attributes['data-content']
+                        print(span_explanation)
+                    # elif element.attributes['class'] == 'api dictionary':
+                    #     span_dictionary = element.text()
+                    #     print(span_dictionary)
+                    elif element.attributes['class'] == 'leitwort':
+                        span_leitwort = element.text()
+                        print(span_leitwort)
+                elif element.tag == 'li':
+                    li = element.text()
+                    print(li)
 
         contents = []
         # for i in range(len(json_article['data']['currentUserArticles'][0]['article']['content'])):
@@ -91,7 +118,7 @@ class AmbossScraper:
         # driver = self.webdriversetup()
         # cookies = self.get_cookies(driver)
         # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729146985, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '73c7a7d067065b17949def6fa6fe2d4d', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1717569384, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImUyZDgwNjhmLWExZTAtNWU0My04MDEyLWJkOTFkOTI4ZWY3MSIsImNyZWF0ZWQiOjE2ODU5NDY5ODg5MjYsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1717482988, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1685948788, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1685947108, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjljZTQyOWEwLWNmOWItNGUxYy1iOTY4LWE1MmI1NmY0MDAzZiIsImNyZWF0ZWQiOjE2ODU5NDY5ODg5MjgsImluU2FtcGxlIjp0cnVlfQ==', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1685948788, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1685948788, 'sameSite': 'None'}, {'name': '_dd_s', 'value': 'logs=1&id=0b2a1616-a203-4e59-9d70-dcc6e52c2732&created=1685946985152&expire=1685947890697', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1685947890, 'sameSite': 'None'}, {'name': '_bb', 'value': '647d8270da2bdfd4021b3a23', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749018992, 'sameSite': 'None'}, {'name': '_gcl_au', 'value': '1.1.15690308.1685946994', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1693722994, 'sameSite': 'None'}, {'name': 'ajs_user_id', 'value': 'kTDamId5', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1717482994, 'sameSite': 'Lax'}, {'name': 'ajs_anonymous_id', 'value': 'a15e4b14-fbb6-4e11-a1cd-15f498aa7ba0', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1717482994, 'sameSite': 'Lax'}]
+        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729227289, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029090, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '73c7a7d067065b17949def6fa6fe2d4d', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1717649690, 'sameSite': 'None'}, {'name': '_dd_s', 'value': 'logs=1&id=d4fa63af-eb22-440d-ba14-b1e58cefe3ff&created=1686027289635&expire=1686028193428', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686028193, 'sameSite': 'None'}, {'name': '_bb', 'value': '647ebc1ef972609e54fe224a', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749099294, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': 'dbba0acb-bebe-45fb-a0e9-413a38734915', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1717563295, 'sameSite': 'Lax'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImU1ZWUyYjlmLTM4OGQtNTNlMC1hNmQ5LWI1ZmZjZDhhN2JmMyIsImNyZWF0ZWQiOjE2ODYwMjcyOTA4MTIsImV4aXN0aW5nIjp0cnVlfQ==', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1717563295, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjQ1MTRmNjdlLTEwMjQtNDVmMC1hNzE3LWFlNjY2MGY1NTA0YiIsImNyZWF0ZWQiOjE2ODYwMjcyOTA4MTMsImluU2FtcGxlIjp0cnVlfQ==', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029095, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686027415, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029095, 'sameSite': 'None'}, {'name': '_hjHasCachedUserAttributes', 'value': 'true', 'path': '/', 'domain': 'next.amboss.com', 'secure': True, 'httpOnly': False, 'sameSite': 'None'}]
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
         self.parse(json_data)
