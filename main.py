@@ -9,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 import creds
 from dataclasses import dataclass
 import json
+import base64
 
 
 @dataclass
@@ -80,6 +81,8 @@ class AmbossScraper:
                 'p, p > span.api.explanation, p > span.leitwort, p > span[data-type="image"], p > span[data-type="highlight"], li')
 
             print(nav)
+            count = 1
+            span_explanations = []
             for element in elements:
                 if element.tag == 'p':
                     p = element.text().strip()
@@ -92,8 +95,16 @@ class AmbossScraper:
                         img = element.attributes['data-source']
                         print(img)
                     elif element.attributes['class'] == 'api explanation':
-                        span_explanation = element.attributes['data-content']
-                        print(span_explanation)
+                        base64_string = element.attributes['data-content']
+                        decoded_bytes = base64.b64decode(base64_string)
+                        decoded_string = decoded_bytes.decode('utf-8')
+                        tree = HTMLParser(decoded_string).text().strip()
+                        span_explanations.append({str(count): tree})
+                        count += 1
+                        print(span_explanations)
+                        # for i, span_explanation in enumerate(tree):
+                        #     span_explanations.append({str(i): span_explanation}.copy())
+                        # print(span_explanations)
                     # elif element.attributes['class'] == 'api dictionary':
                     #     span_dictionary = element.text()
                     #     print(span_dictionary)
