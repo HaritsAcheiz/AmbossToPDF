@@ -58,78 +58,76 @@ class AmbossScraper:
             json_data = response.json()
             return json_data
 
+    def expand(self, html):
+        doc = HTMLParser(html)
+        span_elements = doc.css('span.api.explanation')
+        for element in span_elements:
+            base64_string = element.attributes['data-content']
+            decoded_bytes = base64.b64decode(base64_string)
+            decoded_string = decoded_bytes.decode('utf-8')
+            decoded_content = f"(** {HTMLParser(decoded_string).text().strip()} **)"
+            # Create a new text node with the data-content value
+            new_text = HTMLParser(f'<text>{decoded_content}</text>').root
+            # Replace the <span> element with the new text node
+            element.replace_with(new_text)
+
+        # Get the updated HTML
+        updated_html = doc.html
+        return updated_html
+
     def parse(self, json_data):
         json_article = json_data[4]['data']['currentUserArticles'][0]['article']
-        formatted_json = json.dumps(json_article, indent=2)
-        print(formatted_json)
+        # formatted_json = json.dumps(json_article, indent=2)
+        # print(formatted_json)
         title = json_article['title'].strip()
         print(title)
 
         synonyms_list = json_article['synonyms']
-        synonyms = ', '.join(synonyms_list)
+        synonyms = f"( {', '.join(synonyms_list)} )"
         print(synonyms)
 
         updated_date = json_article['updatedDate']
         print(updated_date)
 
-        for i in range(len(json_article['content'])):
+        for i in range(len(json_article['content']) - 1):
             print(f'==================={i}====================')
             nav = json_article['content'][i]['title']
-            content = HTMLParser(json_article['content'][i]['content'])
-            # elements = content.css('p, span.api.explanation, span[data-type="highlight"], span.leitwort, span[data-type="image"], li')
-            elements = content.css(
-                'p, p > span.api.explanation, p > span.leitwort, p > span[data-type="image"], p > span[data-type="highlight"], li')
-
             print(nav)
-            count = 1
-            span_explanations = []
+
+            content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
+            expanded_content = HTMLParser(content)
+            # print(expanded_content.html)
+            elements = expanded_content.css('p, li , span')
+
             for element in elements:
+
                 if element.tag == 'p':
-                    p = element.text().strip()
-                    print(p)
-                elif element.tag == 'a':
-                    a = element.text().strip()
-                    print(a)
+                    body = element.text().strip()
+                    print(body)
+
                 elif element.tag == 'span':
-                    if element.attributes['data-type'] == 'image':
-                        img = element.attributes['data-source']
-                        print(img)
-                    elif element.attributes['class'] == 'api explanation':
-                        base64_string = element.attributes['data-content']
-                        decoded_bytes = base64.b64decode(base64_string)
-                        decoded_string = decoded_bytes.decode('utf-8')
-                        tree = HTMLParser(decoded_string).text().strip()
-                        span_explanations.append({str(count): tree})
-                        count += 1
-                        print(span_explanations)
-                        # for i, span_explanation in enumerate(tree):
-                        #     span_explanations.append({str(i): span_explanation}.copy())
-                        # print(span_explanations)
-                    # elif element.attributes['class'] == 'api dictionary':
-                    #     span_dictionary = element.text()
-                    #     print(span_dictionary)
-                    elif element.attributes['class'] == 'leitwort':
-                        span_leitwort = element.text()
-                        print(span_leitwort)
+                    try:
+                        if element.attributes['data-type'] == 'image':
+                            img = element.attributes['data-source']
+                            print(img)
+                    except:
+                        continue
+
                 elif element.tag == 'li':
-                    li = element.text()
+                    # print(element.html)
+                    try:
+                        li = f"\u2022 {element.css_first('span.leitwort').text().strip()}"
+                    except:
+                        li = f"\u25CB {element.text().strip()}"
                     print(li)
 
-        contents = []
-        # for i in range(len(json_article['data']['currentUserArticles'][0]['article']['content'])):
-        #     content = HTMLParser(json_article['data']['currentUserArticles'][0]['article']['content'][i]['content']).text().strip()
-        #     contents.append(content)
-        # main_article = ''.join(contents)
-        # print(abstract)
-        # print('===================================')
-        # print(main_article)
 
     def main(self):
         # print(f'Preaparation...')
         # driver = self.webdriversetup()
         # cookies = self.get_cookies(driver)
         # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729227289, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029090, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '73c7a7d067065b17949def6fa6fe2d4d', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1717649690, 'sameSite': 'None'}, {'name': '_dd_s', 'value': 'logs=1&id=d4fa63af-eb22-440d-ba14-b1e58cefe3ff&created=1686027289635&expire=1686028193428', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686028193, 'sameSite': 'None'}, {'name': '_bb', 'value': '647ebc1ef972609e54fe224a', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749099294, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': 'dbba0acb-bebe-45fb-a0e9-413a38734915', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1717563295, 'sameSite': 'Lax'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImU1ZWUyYjlmLTM4OGQtNTNlMC1hNmQ5LWI1ZmZjZDhhN2JmMyIsImNyZWF0ZWQiOjE2ODYwMjcyOTA4MTIsImV4aXN0aW5nIjp0cnVlfQ==', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1717563295, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjQ1MTRmNjdlLTEwMjQtNDVmMC1hNzE3LWFlNjY2MGY1NTA0YiIsImNyZWF0ZWQiOjE2ODYwMjcyOTA4MTMsImluU2FtcGxlIjp0cnVlfQ==', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029095, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686027415, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686029095, 'sameSite': 'None'}, {'name': '_hjHasCachedUserAttributes', 'value': 'true', 'path': '/', 'domain': 'next.amboss.com', 'secure': True, 'httpOnly': False, 'sameSite': 'None'}]
+        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729712054, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6IjIyNjUxZTQ1LWQzZTktNWI2Zi1hMWYzLTQ2Y2IyMDQ0YTgxZiIsImNyZWF0ZWQiOjE2ODY1MTIwNTQ5NzIsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718048054, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686512174, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjcwN2JkNjA2LTM0ZGEtNDkxMS04NzI1LTg5NmRiMWVkNDJiYSIsImNyZWF0ZWQiOjE2ODY1MTIwNTQ5NzUsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718134454, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '1ad160a1-6386-414b-b273-f67c6be7484b', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718048056, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=fbe03f02-cc7e-4afa-9bbf-08a4a97cd431&created=1686512054059&expire=1686512956898', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686512956, 'sameSite': 'None'}, {'name': '_bb', 'value': '648621b9cec49e781bb59135', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749584057, 'sameSite': 'None'}]
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
         self.parse(json_data)
