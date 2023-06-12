@@ -10,9 +10,11 @@ import creds
 from dataclasses import dataclass
 import json
 import base64
+import os
 
 
 @dataclass
+
 class AmbossScraper:
     base_url: str = 'https://www.amboss.com/de'
 
@@ -76,23 +78,23 @@ class AmbossScraper:
         return updated_html
 
     def parse(self, json_data):
+        data = []
         json_article = json_data[4]['data']['currentUserArticles'][0]['article']
         # formatted_json = json.dumps(json_article, indent=2)
         # print(formatted_json)
         title = json_article['title'].strip()
-        print(title)
+        data.append({'title':title})
 
         synonyms_list = json_article['synonyms']
         synonyms = f"( {', '.join(synonyms_list)} )"
-        print(synonyms)
+        data.append({'synonyms': synonyms})
 
         updated_date = json_article['updatedDate']
-        print(updated_date)
+        data.append({'updated_date': updated_date})
 
         for i in range(len(json_article['content']) - 1):
-            print(f'==================={i}====================')
             nav = json_article['content'][i]['title']
-            print(nav)
+            data.append({'nav': nav})
 
             content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
             expanded_content = HTMLParser(content)
@@ -102,14 +104,18 @@ class AmbossScraper:
             for element in elements:
 
                 if element.tag == 'p':
-                    body = element.text().strip()
-                    print(body)
+                    p = element.text().strip()
+                    if p != '':
+                        data.append({'p': p})
+                    else:
+                        continue
 
                 elif element.tag == 'span':
                     try:
                         if element.attributes['data-type'] == 'image':
                             img = element.attributes['data-source']
-                            print(img)
+                            data.append({'img': img})
+
                     except:
                         continue
 
@@ -119,18 +125,37 @@ class AmbossScraper:
                         li = f"\u2022 {element.css_first('span.leitwort').text().strip()}"
                     except:
                         li = f"\u25CB {element.text().strip()}"
-                    print(li)
+                    data.append({'li': li})
+        return data
 
+    def download_img(self, data):
+        urls = [item.get('img') for item in data if item.get('img')]
+
+        folderpath = os.path.join(os.getcwd(), 'images')
+        os.removedirs(folderpath)
+        os.makedirs(folderpath, exist_ok=True)
+
+        for url in urls:
+            with httpx.Client() as client:
+                response = client.get(url)
+
+            filename = url.split("/")[-1]
+            filepath = os.path.join(folderpath, filename)
+            with open(filepath, "wb") as file:
+                file.write(response.content)
 
     def main(self):
         # print(f'Preaparation...')
         # driver = self.webdriversetup()
         # cookies = self.get_cookies(driver)
         # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729712054, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6IjIyNjUxZTQ1LWQzZTktNWI2Zi1hMWYzLTQ2Y2IyMDQ0YTgxZiIsImNyZWF0ZWQiOjE2ODY1MTIwNTQ5NzIsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718048054, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686512174, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjcwN2JkNjA2LTM0ZGEtNDkxMS04NzI1LTg5NmRiMWVkNDJiYSIsImNyZWF0ZWQiOjE2ODY1MTIwNTQ5NzUsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686513854, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718134454, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '1ad160a1-6386-414b-b273-f67c6be7484b', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718048056, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=fbe03f02-cc7e-4afa-9bbf-08a4a97cd431&created=1686512054059&expire=1686512956898', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686512956, 'sameSite': 'None'}, {'name': '_bb', 'value': '648621b9cec49e781bb59135', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749584057, 'sameSite': 'None'}]
+        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729806776, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718229175, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6IjQ0MmEzZGUzLTNkYmEtNWFiMS04YTUyLTU1NDI5N2YxNDgxMSIsImNyZWF0ZWQiOjE2ODY2MDY3Nzc2MjcsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718142777, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686606897, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6Ijg4OWEwZDk0LThhZmEtNDgyZi05MDUyLTU2NjgwOTVhNGIyNiIsImNyZWF0ZWQiOjE2ODY2MDY3Nzc2MjksImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '5437bcaf-bb25-4767-878c-5c10b8156ed5', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718142779, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=196196fd-cb4d-465f-90ad-b415efb631c7&created=1686606776530&expire=1686607680063', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686607680, 'sameSite': 'None'}, {'name': '_bb', 'value': '648793bd47999598f4de3462', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749678781, 'sameSite': 'None'}]
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
-        self.parse(json_data)
+        data = self.parse(json_data)
+        self.download_img(data)
+        print(data)
+
 
 if __name__ == '__main__':
     s = AmbossScraper()
