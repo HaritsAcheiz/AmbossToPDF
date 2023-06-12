@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import json
 import base64
 import os
+from fpdf import FPDF
 
 
 @dataclass
@@ -144,6 +145,11 @@ class AmbossScraper:
             with open(filepath, "wb") as file:
                 file.write(response.content)
 
+    def create_pdf(self, data):
+        self.download_img(data)
+        pdf =FPDF(orientation='P', unit='pt', format='A4')
+
+
     def main(self):
         # print(f'Preaparation...')
         # driver = self.webdriversetup()
@@ -153,8 +159,7 @@ class AmbossScraper:
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
         data = self.parse(json_data)
-        self.download_img(data)
-        print(data)
+        self.create_pdf(data)
 
 
 if __name__ == '__main__':
