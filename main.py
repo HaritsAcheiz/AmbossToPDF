@@ -12,6 +12,7 @@ import json
 import base64
 import os
 from fpdf import FPDF
+import shutil
 
 
 @dataclass
@@ -133,7 +134,7 @@ class AmbossScraper:
         urls = [item.get('img') for item in data if item.get('img')]
 
         folderpath = os.path.join(os.getcwd(), 'images')
-        os.removedirs(folderpath)
+        shutil.rmtree(folderpath)
         os.makedirs(folderpath, exist_ok=True)
 
         for url in urls:
@@ -148,7 +149,17 @@ class AmbossScraper:
     def create_pdf(self, data):
         self.download_img(data)
         pdf =FPDF(orientation='P', unit='pt', format='A4')
+        pdf.add_font('EpocaPro', style='', fname='fonts/EpocaPro-Regular.ttf', uni=True)
+        pdf.add_font('EpocaPro', style='B', fname='fonts/EpocaPro-Bold.ttf', uni=True)
+        pdf.add_font('EpocaPro', style='I', fname='fonts/EpocaPro-Italic.ttf', uni=True)
 
+        pdf.add_page()
+        for item in data:
+            if item.get('title'):
+                pdf.set_text_color(249, 174, 59)
+                pdf.set_font(family='EpocaPro', style='B', size=20)
+                pdf.cell(w=0, h=50, txt=item.get('title'), align='l', ln=1)
+        pdf.output('result.pdf')
 
     def main(self):
         # print(f'Preaparation...')
