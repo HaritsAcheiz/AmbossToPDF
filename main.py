@@ -91,7 +91,7 @@ class AmbossScraper:
         synonyms = f"( {', '.join(synonyms_list)} )"
         data.append({'synonyms': synonyms})
 
-        updated_date = json_article['updatedDate']
+        updated_date = f"Zuletzt bearbeitet: {json_article['updatedDate']}"
         data.append({'updated_date': updated_date})
 
         for i in range(len(json_article['content']) - 1):
@@ -134,7 +134,8 @@ class AmbossScraper:
         urls = [item.get('img') for item in data if item.get('img')]
 
         folderpath = os.path.join(os.getcwd(), 'images')
-        shutil.rmtree(folderpath)
+        if os.path.exists(folderpath):
+            shutil.rmtree(folderpath)
         os.makedirs(folderpath, exist_ok=True)
 
         for url in urls:
@@ -156,9 +157,32 @@ class AmbossScraper:
         pdf.add_page()
         for item in data:
             if item.get('title'):
-                pdf.set_text_color(249, 174, 59)
-                pdf.set_font(family='EpocaPro', style='B', size=20)
-                pdf.cell(w=0, h=50, txt=item.get('title'), align='l', ln=1)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font(family='EpocaPro', style='B', size=16)
+                pdf.cell(w=0, h=18, txt=item.get('title'), align='l', ln=1)
+            elif item.get('synonyms'):
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font(family='EpocaPro', style='I', size=14)
+                pdf.cell(w=0, h=16, txt=item.get('synonyms'), align='l', ln=1)
+            elif item.get('updated_date'):
+                pdf.set_text_color(139, 139, 139)
+                pdf.set_font(family='EpocaPro', style='', size=14)
+                pdf.cell(w=0, h=16, txt=item.get('updated_date'), align='l', ln=1)
+            elif item.get('nav'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='B', size=14)
+                pdf.cell(w=0, h=16, txt=item.get('nav'), align='l', ln=1)
+            elif item.get('p'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='', size=12)
+                pdf.multi_cell(w=0, h=14, txt=item.get('p'), align='l')
+            elif item.get('img'):
+                pass
+            elif item.get('li'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='', size=12)
+                pdf.multi_cell(w=0, h=14, txt=item.get('li'), align='l')
+
         pdf.output('result.pdf')
 
     def main(self):
@@ -166,7 +190,7 @@ class AmbossScraper:
         # driver = self.webdriversetup()
         # cookies = self.get_cookies(driver)
         # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729806776, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718229175, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6IjQ0MmEzZGUzLTNkYmEtNWFiMS04YTUyLTU1NDI5N2YxNDgxMSIsImNyZWF0ZWQiOjE2ODY2MDY3Nzc2MjcsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718142777, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686606897, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6Ijg4OWEwZDk0LThhZmEtNDgyZi05MDUyLTU2NjgwOTVhNGIyNiIsImNyZWF0ZWQiOjE2ODY2MDY3Nzc2MjksImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686608577, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '5437bcaf-bb25-4767-878c-5c10b8156ed5', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718142779, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=196196fd-cb4d-465f-90ad-b415efb631c7&created=1686606776530&expire=1686607680063', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686607680, 'sameSite': 'None'}, {'name': '_bb', 'value': '648793bd47999598f4de3462', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749678781, 'sameSite': 'None'}]
+        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729892188, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImRjMzVmMGYwLTZiZDUtNTJjOC05ZDMzLTUwNjM4MGFlYTYwOCIsImNyZWF0ZWQiOjE2ODY2OTIxODg4MTAsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718228188, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686692308, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6ImE1ZmQ3NGRhLWJhOGMtNDI5Yi04NzQyLTA2ZTRmODg1YmI5OCIsImNyZWF0ZWQiOjE2ODY2OTIxODg4MTMsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718314586, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '52f32a9a-40e9-4237-8173-cb48dd24538d', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718228191, 'sameSite': 'Lax'}, {'name': '_bs', 'value': '52f32a9a-40e9-4237-8173-cb48dd24538d', 'path': '/', 'domain': '.next.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718228191, 'sameSite': 'Strict'}, {'name': '_dd_s', 'value': 'logs=1&id=3a6b43f5-3d8a-4a30-b8f5-4d1c981fadf8&created=1686692188175&expire=1686693091817', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693091, 'sameSite': 'None'}, {'name': '_bb', 'value': '6488e1607573b03382e10fb5', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749764192, 'sameSite': 'None'}]
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
         data = self.parse(json_data)
