@@ -13,6 +13,7 @@ import base64
 import os
 from fpdf import FPDF
 import shutil
+from PIL import Image
 
 
 @dataclass
@@ -82,8 +83,8 @@ class AmbossScraper:
     def parse(self, json_data):
         data = []
         json_article = json_data[4]['data']['currentUserArticles'][0]['article']
-        # formatted_json = json.dumps(json_article, indent=2)
-        # print(formatted_json)
+        formatted_json = json.dumps(json_article, indent=2)
+        print(formatted_json)
         title = json_article['title'].strip()
         data.append({'title':title})
 
@@ -117,7 +118,6 @@ class AmbossScraper:
                         if element.attributes['data-type'] == 'image':
                             img = element.attributes['data-source']
                             data.append({'img': img})
-
                     except:
                         continue
 
@@ -126,7 +126,7 @@ class AmbossScraper:
                     try:
                         li = f"\u2022 {element.css_first('span.leitwort').text().strip()}"
                     except:
-                        li = f"\u25CB {element.text().strip()}"
+                        li = f"  \u2022 {element.text().strip()}"
                     data.append({'li': li})
         return data
 
@@ -157,6 +157,7 @@ class AmbossScraper:
         pdf.add_page()
         for item in data:
             if item.get('title'):
+                output_name = item.get('title')
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font(family='EpocaPro', style='B', size=16)
                 pdf.cell(w=0, h=18, txt=item.get('title'), align='l', ln=1)
@@ -171,19 +172,26 @@ class AmbossScraper:
             elif item.get('nav'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
+                pdf.cell(w=0, h=16, txt='', align='l', ln=1)
                 pdf.cell(w=0, h=16, txt=item.get('nav'), align='l', ln=1)
             elif item.get('p'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('p'), align='l')
+                pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→','->'), align='l')
             elif item.get('img'):
-                pass
+                image_name = item.get('img').split('/')[-1]
+                img = Image.open(os.path.join(os.getcwd(), 'images', image_name))
+                img.close()
+                img_width = img.width if img.width <= 400 else 400
+                img_x = (pdf.w - img_width) // 2
+                pdf.image(os.path.join(os.getcwd(), 'images', image_name), w=img_width, x=img_x)
+                pdf.cell(w=0, h=16, txt='', align='l', ln=1)
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('li'), align='l')
+                pdf.multi_cell(w=0, h=14, txt=item.get('li').replace('→','->'), align='l')
 
-        pdf.output('result.pdf')
+        pdf.output(f'{output_name}.pdf')
 
     def main(self):
         # print(f'Preaparation...')
