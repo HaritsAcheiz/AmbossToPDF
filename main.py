@@ -86,13 +86,13 @@ class AmbossScraper:
         formatted_json = json.dumps(json_article, indent=2)
         print(formatted_json)
         title = json_article['title'].strip()
-        data.append({'title':title})
+        data.append({'title': title})
 
         synonyms_list = json_article['synonyms']
-        synonyms = f"( {', '.join(synonyms_list)} )"
+        synonyms = f"({', '.join(synonyms_list)})"
         data.append({'synonyms': synonyms})
 
-        updated_date = f"Zuletzt bearbeitet: {json_article['updatedDate']}"
+        updated_date = f"<updated_date> Zuletzt bearbeitet: {json_article['updatedDate']}"
         data.append({'updated_date': updated_date})
 
         for i in range(len(json_article['content']) - 1):
@@ -102,7 +102,7 @@ class AmbossScraper:
             content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
             expanded_content = HTMLParser(content)
             # print(expanded_content.html)
-            elements = expanded_content.css('p, li , span')
+            elements = expanded_content.css('*')
 
             for element in elements:
 
@@ -128,6 +128,11 @@ class AmbossScraper:
                     except:
                         li = f"  \u2022 {element.text().strip()}"
                     data.append({'li': li})
+
+                elif element.tag == 'h2':
+                    h2 = element.text().strip()
+                    data.append({'h2': h2})
+
         return data
 
     def download_img(self, data):
@@ -177,7 +182,7 @@ class AmbossScraper:
             elif item.get('p'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→','->'), align='l')
+                pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→', '->'), align='l')
             elif item.get('img'):
                 image_name = item.get('img').split('/')[-1]
                 img = Image.open(os.path.join(os.getcwd(), 'images', image_name))
@@ -189,7 +194,11 @@ class AmbossScraper:
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('li').replace('→','->'), align='l')
+                pdf.multi_cell(w=0, h=14, txt=item.get('li').replace('→', '->'), align='l')
+            elif item.get('h2'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='B', size=14)
+                pdf.multi_cell(w=0, h=16, txt=item.get('h2').replace('→', '->'), align='l')
 
         pdf.output(f'{output_name}.pdf')
 
