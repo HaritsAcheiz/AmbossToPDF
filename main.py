@@ -92,46 +92,55 @@ class AmbossScraper:
         synonyms = f"({', '.join(synonyms_list)})"
         data.append({'synonyms': synonyms})
 
-        updated_date = f"<updated_date> Zuletzt bearbeitet: {json_article['updatedDate']}"
+        updated_date = f"Zuletzt bearbeitet: {json_article['updatedDate']}"
         data.append({'updated_date': updated_date})
 
-        for i in range(len(json_article['content']) - 1):
-            nav = json_article['content'][i]['title']
-            data.append({'nav': nav})
+        for i in range(len(json_article['content'])):
+            try:
+                if json_article['content'][i]['media'][1]['editorialLink']['isForbidden'] == True:
+                    pass
+            except:
+                nav = json_article['content'][i]['title']
+                data.append({'nav': nav})
 
-            content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
-            expanded_content = HTMLParser(content)
-            # print(expanded_content.html)
-            elements = expanded_content.css('*')
+                content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
+                expanded_content = HTMLParser(content)
+                # print(expanded_content.html)
+                elements = expanded_content.css('*')
 
-            for element in elements:
+                for element in elements:
 
-                if element.tag == 'p':
-                    p = element.text().strip()
-                    if p != '':
-                        data.append({'p': p})
-                    else:
-                        continue
+                    if element.tag == 'p':
+                        p = element.text().strip()
+                        if p != '':
+                            data.append({'p': p})
+                        else:
+                            continue
 
-                elif element.tag == 'span':
-                    try:
-                        if element.attributes['data-type'] == 'image':
-                            img = element.attributes['data-source']
-                            data.append({'img': img})
-                    except:
-                        continue
+                    elif element.tag == 'span':
+                        try:
+                            if element.attributes['data-type'] == 'image':
+                                img = element.attributes['data-source']
+                                data.append({'img': img})
+                        except:
+                            continue
 
-                elif element.tag == 'li':
-                    # print(element.html)
-                    try:
-                        li = f"\u2022 {element.css_first('span.leitwort').text().strip()}"
-                    except:
-                        li = f"  \u2022 {element.text().strip()}"
-                    data.append({'li': li})
+                    elif element.tag == 'li':
+                        # print(element.html)
+                        try:
+                            span_leitwort = f"{element.css_first('span.leitwort').text().strip()}"
+                            data.append({'span_leitwort': span_leitwort})
+                        except:
+                            li = element.text().strip()
+                            data.append({'li': li})
 
-                elif element.tag == 'h2':
-                    h2 = element.text().strip()
-                    data.append({'h2': h2})
+                    elif element.tag == 'h2':
+                        try:
+                            span_api = element.css_first('span.api').text().strip()
+                            data.append({'span_api': span_api})
+                        except:
+                            h2 = element.text().strip()
+                            data.append({'h2': h2})
 
         return data
 
@@ -177,8 +186,10 @@ class AmbossScraper:
             elif item.get('nav'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
+                pdf.set_fill_color(139, 139, 139)
                 pdf.cell(w=0, h=16, txt='', align='l', ln=1)
-                pdf.cell(w=0, h=16, txt=item.get('nav'), align='l', ln=1)
+                pdf.cell(w=0, h=16, txt=item.get('nav'), align='l', ln=1, fill=True)
+                pdf.cell(w=0, h=16, txt='', align='l', ln=1)
             elif item.get('p'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
@@ -194,11 +205,22 @@ class AmbossScraper:
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('li').replace('→', '->'), align='l')
+                pdf.cell(w=0, h=14, txt=f"   \u2022")
+                x_pos = pdf.get_x()
+                pdf.set_x(x_pos)
+                pdf.cell(w=0, h=14, txt=item.get('li').replace('→', '->'), align='l', ln=1)
             elif item.get('h2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
                 pdf.multi_cell(w=0, h=16, txt=item.get('h2').replace('→', '->'), align='l')
+            elif item.get('span_leitwort'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='B', size=12)
+                pdf.multi_cell(w=0, h=14, txt=f"\u2022 {item.get('span_leitwort')}", align='l')
+            elif item.get('span_api'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='B', size=12)
+                pdf.multi_cell(w=0, h=14, txt=item.get('span_api'), align='l')
 
         pdf.output(f'{output_name}.pdf')
 
@@ -207,7 +229,7 @@ class AmbossScraper:
         # driver = self.webdriversetup()
         # cookies = self.get_cookies(driver)
         # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1729892188, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImRjMzVmMGYwLTZiZDUtNTJjOC05ZDMzLTUwNjM4MGFlYTYwOCIsImNyZWF0ZWQiOjE2ODY2OTIxODg4MTAsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718228188, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686692308, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6ImE1ZmQ3NGRhLWJhOGMtNDI5Yi04NzQyLTA2ZTRmODg1YmI5OCIsImNyZWF0ZWQiOjE2ODY2OTIxODg4MTMsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693988, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718314586, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '52f32a9a-40e9-4237-8173-cb48dd24538d', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718228191, 'sameSite': 'Lax'}, {'name': '_bs', 'value': '52f32a9a-40e9-4237-8173-cb48dd24538d', 'path': '/', 'domain': '.next.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718228191, 'sameSite': 'Strict'}, {'name': '_dd_s', 'value': 'logs=1&id=3a6b43f5-3d8a-4a30-b8f5-4d1c981fadf8&created=1686692188175&expire=1686693091817', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686693091, 'sameSite': 'None'}, {'name': '_bb', 'value': '6488e1607573b03382e10fb5', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749764192, 'sameSite': 'None'}]
+        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1730023563, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImZiY2ZjNDMxLTdiZjMtNTY2Mi1iYWFlLTA0YjE1YmE1ZjBhNiIsImNyZWF0ZWQiOjE2ODY4MjM1NjQ0NjMsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718359564, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686825364, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686823684, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6ImZhNGRhMmY3LWRkZmMtNDI1ZC1iZDUwLTQ3YWU3M2ExNzQwOSIsImNyZWF0ZWQiOjE2ODY4MjM1NjQ0NjYsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686825364, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686825364, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718445965, 'sameSite': 'None'}, {'name': '_gcl_au', 'value': '1.1.1503577093.1686823566', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1694599565, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': '52d7285a-d69e-4a3a-a63c-d0593b2a0853', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718359566, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=115d271e-4b36-4e80-ba13-7b0aaa98c9e7&created=1686823563779&expire=1686824466928', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1686824466, 'sameSite': 'None'}, {'name': '_bb', 'value': '648ae28fe6c6c00b3910e2ca', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1749895567, 'sameSite': 'None'}]
         article_url = input('Please copy url of the article: ')
         json_data = self.scrape(article_url, cookies)
         data = self.parse(json_data)
