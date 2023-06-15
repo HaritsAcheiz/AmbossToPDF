@@ -127,20 +127,27 @@ class AmbossScraper:
 
                     elif element.tag == 'li':
                         # print(element.html)
-                        try:
-                            span_leitwort = f"{element.css_first('span.leitwort').text().strip()}"
+                        if element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] == 'leitwort':
+                            span_leitwort = element.css_first('span.leitwort').text().strip()
                             data.append({'span_leitwort': span_leitwort})
-                        except:
+                        elif element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] != 'leitwort':
+                            span_leitwort = element.css_first('span:nth-of-type(1)').text().strip()
+                            data.append({'span_leitwort': span_leitwort})
+                        else:
                             li = element.text().strip()
                             data.append({'li': li})
 
                     elif element.tag == 'h2':
-                        try:
+                        if element.css_first('span.api') and element.css_first('span.api').text().strip() != '':
                             span_api = element.css_first('span.api').text().strip()
                             data.append({'span_api': span_api})
-                        except:
+                        else:
                             h2 = element.text().strip()
                             data.append({'h2': h2})
+
+                    elif element.tag == 'h3':
+                            h3 = element.text().strip()
+                            data.append({'h3': h3})
 
         return data
 
@@ -174,11 +181,11 @@ class AmbossScraper:
                 output_name = item.get('title')
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font(family='EpocaPro', style='B', size=16)
-                pdf.cell(w=0, h=18, txt=item.get('title'), align='l', ln=1)
+                pdf.multi_cell(w=0, h=18, txt=item.get('title'), align='l')
             elif item.get('synonyms'):
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font(family='EpocaPro', style='I', size=14)
-                pdf.cell(w=0, h=16, txt=item.get('synonyms'), align='l', ln=1)
+                pdf.multi_cell(w=0, h=16, txt=item.get('synonyms'), align='l')
             elif item.get('updated_date'):
                 pdf.set_text_color(139, 139, 139)
                 pdf.set_font(family='EpocaPro', style='', size=14)
@@ -186,14 +193,14 @@ class AmbossScraper:
             elif item.get('nav'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
-                pdf.set_fill_color(139, 139, 139)
+                pdf.set_fill_color(211, 211, 211)
                 pdf.cell(w=0, h=16, txt='', align='l', ln=1)
-                pdf.cell(w=0, h=16, txt=item.get('nav'), align='l', ln=1, fill=True)
+                pdf.multi_cell(w=0, h=16, txt=item.get('nav'), align='l', fill=True)
                 pdf.cell(w=0, h=16, txt='', align='l', ln=1)
             elif item.get('p'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→', '->'), align='l')
+                pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→', '->'), align='J')
             elif item.get('img'):
                 image_name = item.get('img').split('/')[-1]
                 img = Image.open(os.path.join(os.getcwd(), 'images', image_name))
@@ -205,22 +212,25 @@ class AmbossScraper:
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=0, h=14, txt=f"   \u2022")
-                x_pos = pdf.get_x()
-                pdf.set_x(x_pos)
-                pdf.cell(w=0, h=14, txt=item.get('li').replace('→', '->'), align='l', ln=1)
+                pdf.cell(w=16, h=14, txt=f"   \u2022", ln=0)
+                pdf.multi_cell(w=0, h=14, txt=item.get('li').replace('→', '->'), align='J')
             elif item.get('h2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
-                pdf.multi_cell(w=0, h=16, txt=item.get('h2').replace('→', '->'), align='l')
+                pdf.multi_cell(w=0, h=16, txt=item.get('h2'), align='l')
             elif item.get('span_leitwort'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=12)
-                pdf.multi_cell(w=0, h=14, txt=f"\u2022 {item.get('span_leitwort')}", align='l')
+                pdf.cell(w=6, h=14, txt=f"\u2022", ln=0)
+                pdf.multi_cell(w=0, h=14, txt=item.get('span_leitwort').replace('→', '->'), align='J')
             elif item.get('span_api'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=12)
                 pdf.multi_cell(w=0, h=14, txt=item.get('span_api'), align='l')
+            elif item.get('h3'):
+                pdf.set_text_color(50, 50, 50)
+                pdf.set_font(family='EpocaPro', style='B', size=14)
+                pdf.multi_cell(w=0, h=16, txt=item.get('h3'), align='l')
 
         pdf.output(f'{output_name}.pdf')
 
