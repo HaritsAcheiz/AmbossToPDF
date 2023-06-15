@@ -96,58 +96,58 @@ class AmbossScraper:
         data.append({'updated_date': updated_date})
 
         for i in range(len(json_article['content'])):
-            try:
-                if json_article['content'][i]['media'][1]['editorialLink']['isForbidden'] == True:
-                    pass
-            except:
-                nav = json_article['content'][i]['title']
-                data.append({'nav': nav})
+            # try:
+            #     if json_article['content'][i]['media'][1]['editorialLink']['isForbidden'] == True:
+            #         pass
+            # except:
+            nav = json_article['content'][i]['title']
+            data.append({'nav': nav})
 
-                content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
-                expanded_content = HTMLParser(content)
-                # print(expanded_content.html)
-                elements = expanded_content.css('*')
+            content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
+            expanded_content = HTMLParser(content)
+            print(expanded_content.html)
+            elements = expanded_content.css('*')
 
-                for element in elements:
+            for element in elements:
 
-                    if element.tag == 'p':
-                        p = element.text().strip()
-                        if p != '':
-                            data.append({'p': p})
-                        else:
-                            continue
+                if element.tag == 'p':
+                    p = element.text().strip()
+                    if p != '':
+                        data.append({'p': p})
+                    else:
+                        continue
 
-                    elif element.tag == 'span':
-                        try:
-                            if element.attributes['data-type'] == 'image':
-                                img = element.attributes['data-source']
-                                data.append({'img': img})
-                        except:
-                            continue
+                elif element.tag == 'span':
+                    try:
+                        if element.attributes['data-type'] == 'image':
+                            img = element.attributes['data-source']
+                            data.append({'img': img})
+                    except:
+                        continue
 
-                    elif element.tag == 'li':
-                        # print(element.html)
-                        if element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] == 'leitwort':
-                            span_leitwort = element.css_first('span.leitwort').text().strip()
-                            data.append({'span_leitwort': span_leitwort})
-                        elif element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] != 'leitwort':
-                            span_leitwort = element.css_first('span:nth-of-type(1)').text().strip()
-                            data.append({'span_leitwort': span_leitwort})
-                        else:
-                            li = element.text().strip()
-                            data.append({'li': li})
+                elif element.tag == 'li':
+                    # print(element.html)
+                    if element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] == 'leitwort':
+                        span_leitwort = element.css_first('span.leitwort').text().strip()
+                        data.append({'span_leitwort': span_leitwort})
+                    elif element.css_first('span.leitwort') and element.css('span')[0].attributes['class'] != 'leitwort':
+                        span_leitwort = element.css_first('span:nth-of-type(1)').text().strip()
+                        data.append({'span_leitwort': span_leitwort})
+                    else:
+                        li = element.text().strip()
+                        data.append({'li': li})
 
-                    elif element.tag == 'h2':
-                        if element.css_first('span.api') and element.css_first('span.api').text().strip() != '':
-                            span_api = element.css_first('span.api').text().strip()
-                            data.append({'span_api': span_api})
-                        else:
-                            h2 = element.text().strip()
-                            data.append({'h2': h2})
+                elif element.tag == 'h2':
+                    if element.css_first('span.api') and element.css_first('span.api').text().strip() != '':
+                        span_api = element.css_first('span.api').text().strip()
+                        data.append({'span_api': span_api})
+                    else:
+                        h2 = element.text().strip()
+                        data.append({'h2': h2})
 
-                    elif element.tag == 'h3':
-                            h3 = element.text().strip()
-                            data.append({'h3': h3})
+                elif element.tag == 'h3':
+                        h3 = element.text().strip()
+                        data.append({'h3': h3})
 
         return data
 
