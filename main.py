@@ -116,8 +116,13 @@ class AmbossScraper:
                 elif element.tag == 'span':
                     try:
                         if element.attributes['data-type'] == 'image':
-                            img = element.attributes['data-source']
-                            data.append({'img': img})
+                            url = element.attributes['data-source']
+                            base64_string = element.attributes['data-description']
+                            decoded_bytes = base64.b64decode(base64_string)
+                            decoded_string = decoded_bytes.decode('utf-8')
+                            desc = HTMLParser(decoded_string).text().strip()
+                            data.append({'img': {'url': url, 'desc': desc}})
+
                     except:
                         continue
 
@@ -140,7 +145,7 @@ class AmbossScraper:
         return data
 
     def download_img(self, data):
-        urls = [item.get('img') for item in data if item.get('img')]
+        urls = [item['img']['url'] for item in data if item.get('img')]
 
         folderpath = os.path.join(os.getcwd(), 'images')
         if os.path.exists(folderpath):
@@ -189,13 +194,22 @@ class AmbossScraper:
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
                 pdf.multi_cell(w=0, h=14, txt=item.get('p').replace('→', '->'), align='J')
+                pdf.cell(w=0, h=14, txt='', align='l', ln=1)
             elif item.get('img'):
-                image_name = item.get('img').split('/')[-1]
+                image_name = item['img']['url'].split('/')[-1]
                 img = Image.open(os.path.join(os.getcwd(), 'images', image_name))
                 img.close()
-                img_width = img.width if img.width <= 400 else 400
-                img_x = (pdf.w - img_width) // 2
-                pdf.image(os.path.join(os.getcwd(), 'images', image_name), w=img_width, x=img_x)
+                # img_width = img.width if img.width <= 400 else 400
+                # img_x = (pdf.w - img_width) // 2
+                # pdf.image(os.path.join(os.getcwd(), 'images', image_name), w=img_width, x=img_x)
+                # pdf.cell(w=0, h=16, txt='', align='l', ln=1)
+                img_width = img.width if img.width <= 250 else 250
+                pdf.image(os.path.join(os.getcwd(), 'images', image_name), w=img_width)
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_font(family='EpocaPro', style='', size=12)
+                pdf.set_fill_color(0, 102, 102)
+                pdf.set_xy(300, pdf.get_y() - (img.height + 45))
+                pdf.multi_cell(w=265, h=14, txt=item['img']['desc'].replace('→', '->'), align='J', fill=True)
                 pdf.cell(w=0, h=16, txt='', align='l', ln=1)
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
