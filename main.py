@@ -117,11 +117,15 @@ class AmbossScraper:
                     try:
                         if element.attributes['data-type'] == 'image':
                             url = element.attributes['data-source']
+                            base64_string = element.attributes['data-title']
+                            decoded_bytes = base64.b64decode(base64_string)
+                            decoded_string = decoded_bytes.decode('utf-8')
+                            title = HTMLParser(decoded_string).text().strip()
                             base64_string = element.attributes['data-description']
                             decoded_bytes = base64.b64decode(base64_string)
                             decoded_string = decoded_bytes.decode('utf-8')
                             desc = HTMLParser(decoded_string).text().strip()
-                            data.append({'img': {'url': url, 'desc': desc}})
+                            data.append({'img': {'url': url, 'title': title, 'desc': desc}})
 
                     except:
                         continue
@@ -207,9 +211,9 @@ class AmbossScraper:
                 pdf.image(os.path.join(os.getcwd(), 'images', image_name), w=img_width)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.set_fill_color(0, 102, 102)
+                pdf.set_fill_color(47, 79, 79)
                 pdf.set_xy(300, pdf.get_y() - (img.height + 45))
-                pdf.multi_cell(w=265, h=14, txt=item['img']['desc'].replace('→', '->'), align='J', fill=True)
+                pdf.multi_cell(w=265, h=14, txt=f"{item['img']['title']}\n\n{item['img']['desc'].replace('→', '->')}", align='l', fill=True)
                 pdf.cell(w=0, h=16, txt='', align='l', ln=1)
             elif item.get('li'):
                 pdf.set_text_color(50, 50, 50)
