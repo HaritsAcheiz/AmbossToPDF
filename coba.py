@@ -14,138 +14,66 @@ class PDF(FPDF):
     def process_table_header(self, rows):
 
         # get max rows
-        for row in rows:
+        for i, row in enumerate(rows):
             cells = row.css('th')
-            rowspans = []
+            colspans = []
             for cell in cells:
-                try:
-                    rowspans.append(int(cell.attributes['rowspan']))
-                except:
-                    rowspans.append(1)
-            for i in range(max(rowspans)):
-                cells = rows[i].css('th')
+                colspan = int(cell.attributes.get("colspan", 1))
+                colspans.append(colspan)
+            count_of_col = 0
+            for x in colspans:
+                count_of_col += 1
+            if i == 0:
                 for cell in cells:
-                    if cell is None:
-                        # set font
-                        self.set_font(family='EpocaPro', style='', size=10)
+                    colspan = int(cell.attributes.get("colspan", 1))
+                    rowspan = int(cell.attributes.get("rowspan", 1))
+                    content = cell.text().strip()
 
-                        # Calculate cell width and height based on colspan and rowspan
-                        max_width = self.w - 2 * self.l_margin
-                        cell_width = max_width / 2
+                    # Calculate cell width and height based on colspan and rowspan
+                    line_height = self.font_size
+                    cell_width = self.epw / count_of_col
+                    cell_height = line_height
 
-                        # Draw merged cell
-                        self.cell(w=cell_width, h=20, txt='', border=1, align='C')
-                    else:
-                        colspan = int(cell.attributes.get("colspan", 1))
-                        content = cell.text().strip()
+                    if colspan == 2:
+                        merged_cell_pos = self.x - self.l_margin
+                        merged_cell_width = self.epw / count_of_col
 
-                        # Calculate cell width and height based on colspan and rowspan
-                        max_width = self.w - 2 * self.l_margin
-                        cell_width = max_width / (colspan * 2)
+                    if rowspan == 2:
+                        cell_height = line_height * 2
 
-                        # set font
-                        self.set_font(family='EpocaPro', style='', size=10)
+                    # set font
+                    self.set_font(family='EpocaPro', style='', size=10)
 
-                        # Draw merged cell
-                        self.cell(w=cell_width, h=20, txt=content, border=1, align='C')
-        # main function
-            self.ln()
+                    # Header
+                    self.set_font(family='EpocaPro', style='B', size=10)
+                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, border=1, align='L', new_x="RIGHT", new_y="TOP")
+                self.ln(line_height)
+            else:
+                self.cell(merged_cell_pos)
+                for cell in cells:
+                    colspan = int(cell.attributes.get("colspan", 1))
+                    rowspan = int(cell.attributes.get("rowspan", 1))
+                    content = cell.text().strip()
 
-    # def process_table_header(self, rows):
-    #     for row in rows:
-    #         cells = row.css("th")
-    #         for cell in cells:
-    #             colspan = int(cell.attributes.get("colspan", 1))
-    #             rowspan = int(cell.attributes.get("rowspan", 1))
-    #             content = cell.text().strip()
-    #
-    #             # Calculate cell width and height based on colspan and rowspan
-    #             max_width = self.w - 2 * self.l_margin
-    #             cell_width = max_width / (colspan * 2)
-    #             cell_height = 20 * rowspan
-    #
-    #             scope = cell.attributes.get("scope", "")
-    #             if scope.lower() == "col":
-    #                 align = "C"
-    #                 border = "TB"
-    #             elif scope.lower() == "row":
-    #                 align = "L"
-    #                 border = "LR"
-    #             else:
-    #                 align = "C"
-    #                 border = "LR"
-    #
-    #             #set font
-    #             self.set_font(family='EpocaPro', style='', size=10)
-    #
-    #             # Draw merged cell
-    #             self.cell(cell_width, cell_height, content, border=border, align=align)
-    #
-    #
-    #         self.ln()
+                    if colspan == 2:
+                        merged_cell_pos = self.x - self.l_margin
+                        merged_cell_width = self.epw / count_of_col
 
-    # def process_table_header(self, rows):
-    #     # Process first row
-    #     first_row_cells = rows[0].css("th")
-    #     for cell in first_row_cells:
-    #         colspan = int(cell.attributes.get("colspan", 1))
-    #         rowspan = int(cell.attributes.get("rowspan", 1))
-    #         content = cell.text().strip()
-    #
-    #         # Calculate cell width and height based on colspan and rowspan
-    #         max_width = self.w - 2 * self.l_margin
-    #         cell_width = max_width / (colspan * 2)
-    #         cell_height = 20 * rowspan
-    #
-    #         # Set font
-    #         self.set_font(family='EpocaPro', style='', size=12)
-    #
-    #         # Set cell attributes
-    #         border = 1
-    #         align = "C"
-    #
-    #         # Draw merged cell
-    #         self.cell(cell_width, cell_height, content, border=border, align=align)
-    #
-    #     self.ln()
-    #
-    #     # Process second row
-    #     second_row_cells = rows[1].css("th")
-    #     column_widths = []
-    #     for cell in second_row_cells:
-    #         colspan = int(cell.attributes.get("colspan", 1))
-    #         rowspan = int(cell.attributes.get("rowspan", 1))
-    #         content = cell.text().strip()
-    #
-    #         # Calculate cell width and height based on colspan and rowspan
-    #         max_width = self.w - 2 * self.l_margin
-    #         cell_width = max_width / (colspan * 2)
-    #         cell_height = 20 * rowspan
-    #
-    #         # Set font
-    #         self.set_font(family='EpocaPro', style='', size=12)
-    #
-    #         # Set cell attributes
-    #         border = 1
-    #         align = "C"
-    #
-    #         # Draw merged cell
-    #         self.cell(cell_width, cell_height, content, border=border, align=align)
-    #
-    #         # Store the column width for alignment adjustment
-    #         column_widths.append(cell_width)
-    #
-    #     self.ln()
-    #
-    #     # Adjust the alignment of the second row cells based on the column widths
-    #     for i, width in enumerate(column_widths):
-    #         if i == 0:
-    #             self.set_x(self.l_margin)
-    #         else:
-    #             self.set_x(self.get_x() + width)
-    #         self.multi_cell(width, 0, "", border="B", align="C")
-    #
-    #     self.ln()
+                    if rowspan == 2:
+                        cell_height = line_height * 2
+
+                    # set font
+                    self.set_font(family='EpocaPro', style='', size=10)
+
+                    # Calculate cell width and height based on colspan and rowspan
+                    line_height = self.font_size
+                    cell_width = merged_cell_width / (colspan * 2)
+                    # cell_height = line_height * rowspan
+
+                    # Header
+                    self.set_font(style='B')
+                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, border=1, align='L', new_x="RIGHT", new_y="TOP")
+                self.ln(line_height)
 
 # Create a new PDF object
 pdf = PDF(orientation='P', unit='pt', format='A4')
