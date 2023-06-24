@@ -17,12 +17,17 @@ class PDF(FPDF):
         for i, row in enumerate(rows):
             cells = row.css('th')
             colspans = []
+            x = pdf.get_x()
+            y = pdf.get_y()
+            max_height = 0
+
             for cell in cells:
                 colspan = int(cell.attributes.get("colspan", 1))
                 colspans.append(colspan)
             count_of_col = 0
             for x in colspans:
                 count_of_col += 1
+
             if i == 0:
                 for cell in cells:
                     colspan = int(cell.attributes.get("colspan", 1))
@@ -42,12 +47,24 @@ class PDF(FPDF):
                         cell_height = line_height * 2
 
                     # set font
-                    self.set_font(family='EpocaPro', style='', size=10)
+                    self.set_font(family='EpocaPro', style='', size=8)
 
                     # Header
-                    self.set_font(family='EpocaPro', style='B', size=10)
-                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, border=1, align='L', new_x="RIGHT", new_y="TOP")
+                    self.set_font(family='EpocaPro', style='B', size=8)
+
+                    last_x = self.get_x()
+                    last_y = self.get_y()
+                    self.line(x + self.l_margin, y, x + self.l_margin, y+cell_height)
+                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
+
+                    if self.get_y() - y > max_height:
+                        max_height = self.get_y() - y
+                    self.set_xy(self.get_x(),last_y)
+                    self.line(self.get_x(),y,self.get_x(),y + cell_height)
+
                 self.ln(line_height)
+                pdf.line(x + self.l_margin, y, x + self.l_margin + cell_width * count_of_col, y)
+
             else:
                 self.cell(merged_cell_pos)
                 for cell in cells:
@@ -63,7 +80,7 @@ class PDF(FPDF):
                         cell_height = line_height * 2
 
                     # set font
-                    self.set_font(family='EpocaPro', style='', size=10)
+                    self.set_font(family='EpocaPro', style='', size=8)
 
                     # Calculate cell width and height based on colspan and rowspan
                     line_height = self.font_size
@@ -72,8 +89,20 @@ class PDF(FPDF):
 
                     # Header
                     self.set_font(style='B')
-                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, border=1, align='L', new_x="RIGHT", new_y="TOP")
+                    last_x = self.get_x()
+                    last_y = self.get_y()
+                    self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
+                    if pdf.get_y() - y > max_height:
+                        max_height = pdf.get_y() - y
+                    self.set_xy(self.get_x(),last_y)
+                    self.line(self.get_x(), y, self.get_x(), y + cell_height)
+
                 self.ln(line_height)
+                pdf.line(merged_cell_pos + self.l_margin, y, merged_cell_pos + self.l_margin + cell_width * count_of_col, y)
+                pdf.line(merged_cell_pos + self.l_margin, y + max_height, merged_cell_pos + self.l_margin + cell_width * count_of_col, y + max_height)
+
+        pdf.line(x, y + max_height, x + cell_width * count_of_col, y + max_height)
+
 
 # Create a new PDF object
 pdf = PDF(orientation='P', unit='pt', format='A4')
