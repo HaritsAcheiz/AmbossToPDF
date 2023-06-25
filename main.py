@@ -152,20 +152,30 @@ class AmbossScraper:
                             continue
 
                 elif element.tag == 'li':
-                    if element.css_first('span.leitwort'):
-                        li_leitwort = element.text().strip().split('\n')[0]
-                        data.append({'li_leitwort': li_leitwort})
-                    # elif element.child.tag == 'ul':
-                    #     pass
-                    elif element.css_first('span.linksuggest'):
-                        li_linksuggest = element.text().strip().split('\n')[0]
-                        data.append({'li_linksuggest': li_linksuggest})
-                    elif len(element.css('li')) > 1 and not (element.css_first('span.leitwort') or element.css_first('span.linksuggest')):
-                        # print(element.css('li'))
-                        continue
+                    # if element.css_first('span.leitwort'):
+                    #     li_leitwort = element.text().strip().split('\n')[0]
+                    #     data.append({'li_leitwort': li_leitwort})
+                    # # elif element.child.tag == 'ul':
+                    # #     pass
+                    # elif element.css_first('span.linksuggest'):
+                    #     li_linksuggest = element.text().strip().split('\n')[0]
+                    #     data.append({'li_linksuggest': li_linksuggest})
+                    # elif len(element.css('li')) > 1 and not (element.css_first('span.leitwort') or element.css_first('span.linksuggest')):
+                    #     # print(element.css('li'))
+                    #     continue
+                    # else:
+                    #     li = element.text().strip()
+                    #     data.append({'li': li})
+                    if element.css_first('ul') != None:
+                        if element.css_first('ul').css_first('ul').css_first('ul').css_first('ul') != None:
+                            li1 = element.text().split('\n')[0]
+                            data.append({'li1': li1})
+                        else:
+                            li2 = element.text().split('\n')[0]
+                            data.append({'li2': li2})
                     else:
-                        li = element.text().strip()
-                        data.append({'li': li})
+                        li3 = element.text().strip()
+                        data.append({'li3': li3})
 
                 # elif element.tag == 'li':
                 #     if element.css_first('span.leitwort'):
@@ -401,36 +411,36 @@ class AmbossScraper:
                 pdf.set_fill_color(204, 229, 255)
                 pdf.multi_cell(w=max_width, h=14, txt=item.get('span_merkspruch').replace('→', '->'), align='J', border=1, fill=True, new_x='LMARGIN', new_y='NEXT')
                 pdf.cell(w=max_width, h=14, txt='', align='l', new_x='LMARGIN', new_y='NEXT')
-            # elif item.get('li1'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"\u2022", new_x=XPos.RIGHT, new_y=YPos.TOP)
-            #     pdf.multi_cell(w=0, h=14, txt=item.get('li1').replace('→', '->'), align='J')
-            # elif item.get('li2'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"   \u2022", new_x=XPos.RIGHT, new_y=YPos.TOP)
-            #     pdf.multi_cell(w=0, h=14, txt=item.get('li2').replace('→', '->'), align='J')
-            # elif item.get('li3'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"      \u2022", new_x=XPos.RIGHT, new_y=YPos.TOP)
-            #     pdf.multi_cell(w=0, h=14, txt=item.get('li3').replace('→', '->'), align='J')
-            elif item.get('li_leitwort'):
+            elif item.get('li1'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
-                pdf.multi_cell(w=max_width, h=14, txt=item.get('li_leitwort').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
-            elif item.get('li_linksuggest'):
+                pdf.cell(w=16, h=14, txt=f"\u2022 <li1>", new_x='END', new_y='LAST')
+                pdf.multi_cell(w=max_width, h=14, txt=item.get('li1').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+            elif item.get('li2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
-                pdf.multi_cell(w=max_width, h=14, txt=item.get('li_linksuggest').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
-            elif item.get('li'):
+                pdf.cell(w=16, h=14, txt=f"   \u2022 <li2>", new_x='END', new_y='LAST')
+                pdf.multi_cell(w=max_width, h=14, txt=item.get('li2').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+            elif item.get('li3'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=16, h=14, txt=f"   \u2022", new_x='RIGHT', new_y='LAST')
-                pdf.multi_cell(w=max_width, h=14, txt=item.get('li').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+                pdf.cell(w=max_width, h=14, txt=f"      \u2022<li3>", new_x='END', new_y='LAST')
+                pdf.multi_cell(w=max_width, h=14, txt=item.get('li3').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+            # elif item.get('li_leitwort'):
+            #     pdf.set_text_color(50, 50, 50)
+            #     pdf.set_font(family='EpocaPro', style='', size=12)
+            #     pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
+            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li_leitwort').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+            # elif item.get('li_linksuggest'):
+            #     pdf.set_text_color(50, 50, 50)
+            #     pdf.set_font(family='EpocaPro', style='', size=12)
+            #     pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
+            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li_linksuggest').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
+            # elif item.get('li'):
+            #     pdf.set_text_color(50, 50, 50)
+            #     pdf.set_font(family='EpocaPro', style='', size=12)
+            #     pdf.cell(w=16, h=14, txt=f"   \u2022", new_x='RIGHT', new_y='LAST')
+            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
             elif item.get('h2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
