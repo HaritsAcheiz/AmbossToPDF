@@ -54,13 +54,13 @@ class PDF(FPDF):
 
                     last_x = self.get_x()
                     last_y = self.get_y()
-                    self.line(x + self.l_margin, y, x + self.l_margin, y+cell_height)
+                    self.line(x + self.l_margin, y, x + self.l_margin, y+max_height)
                     self.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
 
                     if self.get_y() - y > max_height:
                         max_height = self.get_y() - y
                     self.set_xy(self.get_x(),last_y)
-                    self.line(self.get_x(),y,self.get_x(),y + cell_height)
+                    self.line(self.get_x(),y,self.get_x(),y + max_height)
 
                 self.ln(line_height)
                 pdf.line(x + self.l_margin, y, x + self.l_margin + cell_width * count_of_col, y)
@@ -95,13 +95,14 @@ class PDF(FPDF):
                     if pdf.get_y() - y > max_height:
                         max_height = pdf.get_y() - y
                     self.set_xy(self.get_x(),last_y)
-                    self.line(self.get_x(), y, self.get_x(), y + cell_height)
+                    self.line(self.get_x(), y, self.get_x(), y + max_height)
 
                 self.ln(line_height)
-                pdf.line(merged_cell_pos + self.l_margin, y, merged_cell_pos + self.l_margin + cell_width * count_of_col, y)
-                pdf.line(merged_cell_pos + self.l_margin, y + max_height, merged_cell_pos + self.l_margin + cell_width * count_of_col, y + max_height)
+                self.line(merged_cell_pos + self.l_margin, y, merged_cell_pos + self.l_margin + cell_width * count_of_col, y)
+                self.line(merged_cell_pos + self.l_margin, y + max_height, merged_cell_pos + self.l_margin + cell_width * count_of_col, y + max_height)
 
-        pdf.line(x, y + max_height, x + cell_width * count_of_col, y + max_height)
+            #last border
+            self.line(x + self.l_margin, y + max_height, x + self.l_margin + cell_width * count_of_col, y + max_height)
 
 
 # Create a new PDF object
