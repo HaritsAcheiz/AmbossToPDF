@@ -167,7 +167,7 @@ class AmbossScraper:
                     #     li = element.text().strip()
                     #     data.append({'li': li})
                     if element.css_first('ul') != None:
-                        if element.css_first('ul').css_first('ul').css_first('ul').css_first('ul') != None:
+                        if element.css_first('li > ul > li > ul > li') != None:
                             li1 = element.text().split('\n')[0]
                             data.append({'li1': li1})
                         else:
@@ -414,17 +414,17 @@ class AmbossScraper:
             elif item.get('li1'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=16, h=14, txt=f"\u2022 <li1>", new_x='END', new_y='LAST')
+                pdf.cell(w=16, h=14, txt=f"\u2022 ", new_x='END', new_y='LAST')
                 pdf.multi_cell(w=max_width, h=14, txt=item.get('li1').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
             elif item.get('li2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=16, h=14, txt=f"   \u2022 <li2>", new_x='END', new_y='LAST')
+                pdf.cell(w=16, h=14, txt=f"   \u2022 ", new_x='END', new_y='LAST')
                 pdf.multi_cell(w=max_width, h=14, txt=item.get('li2').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
             elif item.get('li3'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='', size=12)
-                pdf.cell(w=max_width, h=14, txt=f"      \u2022<li3>", new_x='END', new_y='LAST')
+                pdf.cell(w=max_width, h=14, txt=f"      \u2022", new_x='END', new_y='LAST')
                 pdf.multi_cell(w=max_width, h=14, txt=item.get('li3').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
             # elif item.get('li_leitwort'):
             #     pdf.set_text_color(50, 50, 50)
