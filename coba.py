@@ -71,6 +71,8 @@ class PDF(FPDF):
                     colspan_data = int(item.attributes.get("colspan", 1))
                     line_height = self.font_size
                     cell_height = line_height * rowspan_data
+                    last_x = self.get_x()
+                    last_y = self.get_y()
                     if col_number == count_of_col - 1 or colspan_data == count_of_col - 1:
                         self.multi_cell(w=cell_width * colspan_data,
                                         # h=cell_height,
@@ -109,13 +111,17 @@ class PDF(FPDF):
                     if item == body[-1]:
                         y_td = self.get_y()
                         y_tds.append(y_td)
-                        self.set_xy(self.l_margin, max(y_tds) * 1.05)
+                        self.set_xy(self.l_margin, max(y_tds))
+                        self.line(last_x, last_y, last_x, max(y_tds))
                     else:
                         y_td = self.get_y()
                         y_tds.append(y_td)
                         self.set_xy(self.get_x(), start_pos[1])
+                        self.line(last_x, last_y, last_x, max(y_tds))
             else:
                 # write none header
+                last_x = self.get_x()
+                last_y = self.get_y()
                 self.multi_cell(w=cell_width * colspan_header,
                                 txt='',
                                 align='L',
@@ -142,6 +148,8 @@ class PDF(FPDF):
                         colspan_data = int(item.attributes.get("colspan", 1))
                         line_height = self.font_size
                         cell_height = line_height * rowspan_data
+                        last_x = self.get_x()
+                        last_y = self.get_y()
                         self.multi_cell(w=cell_width * colspan_data,
                                         # h=cell_height,
                                         txt=item.text().strip(),
@@ -158,6 +166,8 @@ class PDF(FPDF):
                             if colspan_data != col_number:
                                 line_height = self.font_size
                                 cell_height = line_height * rowspan_data
+                                last_x = self.get_x()
+                                last_y = self.get_y()
                                 self.multi_cell(w=cell_width * colspan_data,
                                                 # h=cell_height,
                                                 txt='',
@@ -170,6 +180,8 @@ class PDF(FPDF):
                                 colspan_data = int(item.attributes.get("colspan", 1))
                                 line_height = self.font_size
                                 cell_height = line_height * rowspan_data
+                                last_x = self.get_x()
+                                last_y = self.get_y()
                                 self.multi_cell(w=cell_width * colspan_data,
                                                 # h=cell_height,
                                                 txt=item.text().strip(),
@@ -180,11 +192,15 @@ class PDF(FPDF):
                     if item == body[-1]:
                         y_td = self.get_y()
                         y_tds.append(y_td)
-                        self.set_xy(self.l_margin, max(y_tds) * 1.05)
+                        self.set_xy(self.l_margin, max(y_tds))
+                        self.line(last_x, last_y, last_x, max(y_tds))
                     else:
                         y_td = self.get_y()
                         y_tds.append(y_td)
                         self.set_xy(self.get_x(), start_pos[1])
+                        self.line(last_x, last_y, last_x, max(y_tds))
+            self.ln(line_height)
+            self.line(start_pos[0], start_pos[1], start_pos[0], self.get_y())
 
             # self.set_xy(start_pos[0], self.get_y() + (max(y_tds) / 1.5))
                 # else:
