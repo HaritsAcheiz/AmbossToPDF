@@ -28,31 +28,33 @@ class PDF(FPDF):
                 colperraw += 1
             if count_of_col < colperraw:
                 count_of_col = colperraw
-        cell_width = pdf.epw / count_of_col
+        cell_width = self.epw / count_of_col
         return cell_width, count_of_col
 
     def process_table_body(self, rows, cell_width, count_of_col):
         for i, row in enumerate(rows):
             header = row.css_first('th')
-            start_pos = (pdf.get_x(), pdf.get_y())
+            start_pos = (self.get_x(), self.get_y())
             y_tds = []
-            self.set_xy(start_pos[0], start_pos[1])
+            self.set_font(family='EpocaPro', style='', size=8)
             # check if row have th element
             if header:
                 self.set_font(family='EpocaPro', style='', size=8)
                 self.set_text_color(0, 0, 0)
                 rowspan_header= int(header.attributes.get("rowspan", 1))
                 colspan_header = int(header.attributes.get("colspan", 1))
-                line_height = pdf.font_size
+                line_height = self.font_size
                 cell_height = line_height * rowspan_header
                 self.multi_cell(w=cell_width * colspan_header,
-                                h=cell_height,
-                                txt=f'<header>{header.text().strip()}',
+                                # h=cell_height,
+                                txt=header.text().strip(),
                                 align='L',
                                 new_x='RIGHT',
                                 new_y='NEXT')
                 y_td = self.get_y()
+                y_tds.append(y_td)
                 self.set_xy(self.get_x(), start_pos[1])
+
                 # write td
                 body = row.css('td')
                 # count col number
@@ -67,56 +69,61 @@ class PDF(FPDF):
                     self.set_text_color(0, 0, 0)
                     rowspan_data = int(item.attributes.get("rowspan", 1))
                     colspan_data = int(item.attributes.get("colspan", 1))
-                    line_height = pdf.font_size
+                    line_height = self.font_size
                     cell_height = line_height * rowspan_data
                     if col_number == count_of_col - 1 or colspan_data == count_of_col - 1:
                         self.multi_cell(w=cell_width * colspan_data,
-                                        h=cell_height,
-                                        txt=f'<body>{item.text().strip()}',
+                                        # h=cell_height,
+                                        txt=item.text().strip(),
                                         align='L',
                                         new_x='RIGHT',
                                         new_y='NEXT')
-                        y_td = self.get_y()
-                        self.set_xy(self.get_x(), start_pos[1])
                     else:
-                        # write none body
-                        self.set_font(family='EpocaPro', style='', size=8)
-                        self.set_text_color(0, 0, 0)
-                        rowspan_data = int(item.attributes.get("rowspan", 1))
-                        colspan_data = int(item.attributes.get("colspan", 1))
-                        if colspan_data != col_number:
-                            line_height = pdf.font_size
-                            cell_height = line_height * rowspan_data
-                            self.multi_cell(w=cell_width * colspan_data,
-                                            h=cell_height,
-                                            txt=f'<body>none',
-                                            align='L',
-                                            new_x='RIGHT',
-                                            new_y='TOP')
+                        if i == 0:
+                            # write none body
                             self.set_font(family='EpocaPro', style='', size=8)
                             self.set_text_color(0, 0, 0)
                             rowspan_data = int(item.attributes.get("rowspan", 1))
                             colspan_data = int(item.attributes.get("colspan", 1))
-                            line_height = pdf.font_size
-                            cell_height = line_height * rowspan_data
-                            self.multi_cell(w=cell_width * colspan_data,
-                                            h=cell_height,
-                                            txt=f'<body>{item.text().strip()}',
-                                            align='L',
-                                            new_x='RIGHT',
-                                            new_y='NEXT')
-                            y_td = self.get_y()
-                            self.set_xy(self.get_x(), start_pos[1])
+                            if colspan_data != col_number:
+                                line_height = self.font_size
+                                cell_height = line_height * rowspan_data
+                                self.multi_cell(w=cell_width * colspan_data,
+                                                # h=cell_height,
+                                                txt='',
+                                                align='L',
+                                                new_x='RIGHT',
+                                                new_y='NEXT')
+                                self.set_font(family='EpocaPro', style='', size=8)
+                                self.set_text_color(0, 0, 0)
+                                rowspan_data = int(item.attributes.get("rowspan", 1))
+                                colspan_data = int(item.attributes.get("colspan", 1))
+                                line_height = self.font_size
+                                cell_height = line_height * rowspan_data
+                                self.multi_cell(w=cell_width * colspan_data,
+                                                # h=cell_height,
+                                                txt=item.text().strip(),
+                                                align='L',
+                                                new_x='RIGHT',
+                                                new_y='NEXT')
+                    if item == body[-1]:
+                        y_td = self.get_y()
+                        y_tds.append(y_td)
+                        self.set_xy(self.l_margin, max(y_tds) * 1.05)
+                    else:
+                        y_td = self.get_y()
+                        y_tds.append(y_td)
+                        self.set_xy(self.get_x(), start_pos[1])
             else:
                 # write none header
                 self.multi_cell(w=cell_width * colspan_header,
-                                txt='<header> none',
+                                txt='',
                                 align='L',
                                 new_x='RIGHT',
                                 new_y='NEXT')
                 y_td = self.get_y()
+                y_tds.append(y_td)
                 self.set_xy(self.get_x(), start_pos[1])
-
                 body = row.css('td')
 
                 # count col number
@@ -133,49 +140,53 @@ class PDF(FPDF):
                         self.set_text_color(0, 0, 0)
                         rowspan_data = int(item.attributes.get("rowspan", 1))
                         colspan_data = int(item.attributes.get("colspan", 1))
-                        line_height = pdf.font_size
+                        line_height = self.font_size
                         cell_height = line_height * rowspan_data
                         self.multi_cell(w=cell_width * colspan_data,
-                                        h=cell_height,
-                                        txt=f'<body>{item.text().strip()}',
+                                        # h=cell_height,
+                                        txt=item.text().strip(),
                                         align='L',
                                         new_x='RIGHT',
                                         new_y='NEXT')
-                        y_td = self.get_y()
-                        self.set_xy(self.get_x(), start_pos[1])
                     else:
-                        # write none body
-                        self.set_font(family='EpocaPro', style='', size=8)
-                        self.set_text_color(0, 0, 0)
-                        rowspan_data = int(item.attributes.get("rowspan", 1))
-                        colspan_data = int(item.attributes.get("colspan", 1))
-                        if colspan_data != col_number:
-                            line_height = pdf.font_size
-                            cell_height = line_height * rowspan_data
-                            self.multi_cell(w=cell_width * colspan_data,
-                                            h=cell_height,
-                                            txt=f'<body>none',
-                                            align='L',
-                                            new_x='RIGHT',
-                                            new_y='TOP')
+                        if i == 0:
+                            # write none body
                             self.set_font(family='EpocaPro', style='', size=8)
                             self.set_text_color(0, 0, 0)
                             rowspan_data = int(item.attributes.get("rowspan", 1))
                             colspan_data = int(item.attributes.get("colspan", 1))
-                            line_height = pdf.font_size
-                            cell_height = line_height * rowspan_data
-                            self.multi_cell(w=cell_width * colspan_data,
-                                            h=cell_height,
-                                            txt=f'<body>{item.text().strip()}',
-                                            align='L',
-                                            new_x='RIGHT',
-                                            new_y='NEXT')
-                            y_td = self.get_y()
-                            self.set_xy(self.get_x(), start_pos[1])
+                            if colspan_data != col_number:
+                                line_height = self.font_size
+                                cell_height = line_height * rowspan_data
+                                self.multi_cell(w=cell_width * colspan_data,
+                                                # h=cell_height,
+                                                txt='',
+                                                align='L',
+                                                new_x='RIGHT',
+                                                new_y='NEXT')
+                                self.set_font(family='EpocaPro', style='', size=8)
+                                self.set_text_color(0, 0, 0)
+                                rowspan_data = int(item.attributes.get("rowspan", 1))
+                                colspan_data = int(item.attributes.get("colspan", 1))
+                                line_height = self.font_size
+                                cell_height = line_height * rowspan_data
+                                self.multi_cell(w=cell_width * colspan_data,
+                                                # h=cell_height,
+                                                txt=item.text().strip(),
+                                                align='L',
+                                                new_x='RIGHT',
+                                                new_y='NEXT')
 
-            y_tds.append(y_td)
-            self.set_xy(start_pos[0], start_pos[1] + (max(y_tds)/1.5))
+                    if item == body[-1]:
+                        y_td = self.get_y()
+                        y_tds.append(y_td)
+                        self.set_xy(self.l_margin, max(y_tds) * 1.05)
+                    else:
+                        y_td = self.get_y()
+                        y_tds.append(y_td)
+                        self.set_xy(self.get_x(), start_pos[1])
 
+            # self.set_xy(start_pos[0], self.get_y() + (max(y_tds) / 1.5))
                 # else:
                 #     # set pos for write td
                 #     self.set_xy(self.get_x(), start_pos[1])
