@@ -7,6 +7,7 @@ from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 import creds
+import warnings
 from dataclasses import dataclass
 import json
 import base64
@@ -15,9 +16,9 @@ from fpdf import FPDF
 import shutil
 from PIL import Image
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 @dataclass
-
 class AmbossScraper:
     base_url: str = 'https://www.amboss.com/de'
 
@@ -39,27 +40,28 @@ class AmbossScraper:
     def get_cookies(self, driver):
         login_url = 'https://next.amboss.com/de/login'
         driver.get(login_url)
-        driver.fullscreen_window()
+        wait = WebDriverWait(driver, 5)
+        wait.until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'button.layers_button__iCDH4:nth-child(2)'))).click()
         wait = WebDriverWait(driver, 20)
-        wait.until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'input[aria-label="E-Mail"]'))).send_keys(
-            creds.email + Keys.TAB + creds.password + Keys.RETURN)
-        wait.until(ec.element_to_be_clickable((By.CSS_SELECTOR, 'div[data-e2e-test-id="ÜbersichtPage"]')))
+        wait.until(ec.element_to_be_clickable((By.CSS_SELECTOR, '.css-1eewvb8-StyledInput'))).send_keys(creds.email + Keys.TAB + creds.password + Keys.RETURN)
+        wait.until(ec.element_to_be_clickable((By.CSS_SELECTOR, '#search-input')))
         cookies = driver.get_cookies()
         driver.close()
         return cookies
 
     def scrape(self, article_url, cookies):
         param = article_url.split("/")
-        course_id = param[5]
-        eid = param[6]
-        article_id = param[-1]
-        payload = [{"operationName":"currentUserCourseBundles","variables":{"courseEid": course_id},"query":"query currentUserCourseBundles($courseEid: ID!) {\n  currentUserCourseBundles(courseEid: $courseEid) {\n    bundle {\n      eid\n      __typename\n    }\n    __typename\n  }\n}\n"},{"operationName":"currentUserCourseBundles","variables":{"eids":[eid]},"query":"query currentUserCourseBundles($eids: [ID!]!) {\n  currentUserBundles(eids: $eids) {\n    bundle {\n      eid\n      title\n      subtitle\n      articleEids\n      isCertified\n      targets {\n        eid\n        articleEid\n        articleTitle\n        anchorEid\n        anchorTitle\n        __typename\n      }\n      sessionTemplate {\n        eid\n        defaultMode\n        questionCount\n        availableQuestionCount\n        title\n        __typename\n      }\n      course {\n        eid\n        category\n        certificateInformation {\n          certificateType\n          percentToPass\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    userBundleDestinations {\n      status\n      bundleDestination {\n        eid\n        __typename\n      }\n      __typename\n    }\n    accessedAt\n    sessionEid\n    __typename\n  }\n}\n"},{"operationName":"articleQuestionResultsQuery","variables":{"eids":[article_id]},"query":"query articleQuestionResultsQuery($eids: [ID!]!) {\n  currentUserArticles(eids: $eids) {\n    article {\n      eid\n      __typename\n    }\n    questionResults {\n      sessionEid\n      questionEid\n      isAnswerCorrect\n      __typename\n    }\n    __typename\n  }\n}\n"},{"operationName":"userParticlesQuery","variables":{"eids":[article_id]},"query":"query userParticlesQuery($eids: [ID!]!) {\n  currentUserArticles(eids: $eids) {\n    article {\n      eid\n      __typename\n    }\n    userParticles {\n      particleEid\n      extension {\n        text\n        eid\n        ownerName\n        __typename\n      }\n      sharedExtensions {\n        text\n        eid\n        ownerName\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"},{"operationName":"articleQuery","variables":{"eids":[article_id]},"query":"query articleQuery($eids: [ID!]!) {\n  currentUserArticles(eids: $eids) {\n    editorialLink {\n      ... on EditorialUrl {\n        url\n        __typename\n      }\n      ... on ForbiddenLink {\n        isForbidden\n        __typename\n      }\n      __typename\n    }\n    studyQuestionProgress {\n      studyObjectiveLabel\n      totalQuestions\n      __typename\n    }\n    article {\n      ...articleFullFragment\n      __typename\n    }\n    isLearned\n    __typename\n  }\n  maxQuestionsWithObjective: questionSessionCustomSize(\n    criteria: {learningCard: $eids, onlyStudyObjectiveRelated: true}\n  )\n  maxQuestionWithoutObjective: questionSessionCustomSize(\n    criteria: {learningCard: $eids}\n  )\n}\n\nfragment articleFullFragment on Article {\n  __typename\n  eid\n  title\n  synonyms\n  abstract\n  knowledgeCategory\n  stages\n  knowledgeScope\n  titleAnchor\n  patientNoteEid\n  updatedDate\n  tipsAndLinks {\n    description\n    url\n    additional\n    __typename\n  }\n  content {\n    ...particleFields\n    __typename\n  }\n  references {\n    ... on ArticleReference {\n      eid\n      __typename\n    }\n    ... on AnthologyReference {\n      eid\n      __typename\n    }\n    ... on BookReference {\n      eid\n      __typename\n    }\n    ... on UrlReference {\n      eid\n      __typename\n    }\n    ... on WebMdReference {\n      eid\n      __typename\n    }\n    ... on MiscReference {\n      eid\n      __typename\n    }\n    ... on UpToDateReference {\n      eid\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment particleFields on Particle {\n  __typename\n  eid\n  partType\n  textType\n  globalStyles\n  title\n  titleReferenceMarkup\n  abstract\n  content\n  isSubParticle\n  titleAnchors\n  media {\n    ...mediaFragment\n    __typename\n  }\n}\n\nfragment mediaFragment on MediaAsset {\n  __typename\n  eid\n  title\n  editorialLink {\n    __typename\n    ... on EditorialUrl {\n      url\n      __typename\n    }\n    ... on ForbiddenLink {\n      isForbidden\n      __typename\n    }\n  }\n  description\n  canonicalUrl\n  aspectRatio\n  overlayUrl\n  externalAddition {\n    __typename\n    ... on ExternalAddition {\n      type\n      url\n      fallbackUrl\n      __typename\n    }\n    ... on BlockedExternalAddition {\n      type\n      __typename\n    }\n  }\n  multilayerAsset\n  copyright {\n    __typename\n    eid\n    html\n  }\n}\n"}]
+        eid = param[5]
+        
+        payload = [{"operationName":"channelNotificationsQuery","variables":{"channels":["userMenu"],"limit":1},"query":"query channelNotificationsQuery($channels: [String!]!, $limit: Int, $showDismissed: Boolean) {\n  currentUserNotification(\n    channels: $channels\n    limit: $limit\n    showDismissed: $showDismissed\n  ) {\n    uuid\n    class\n    payload\n    dismissedAt\n    __typename\n  }\n}"},{"operationName":"latestNonStudyAnalysisQuestionSessions","variables":{"first":5},"query":"query latestNonStudyAnalysisQuestionSessions($first: Int!, $after: String) {\n  currentUserQuestionSessions(first: $first, after: $after) {\n    edges {\n      node {\n        eid\n        userBundle {\n          eid\n          bundle {\n            eid\n            course {\n              eid\n              category\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}"},{"operationName":"channelNotificationsQuery","variables":{"channels":["global"]},"query":"query channelNotificationsQuery($channels: [String!]!, $limit: Int, $showDismissed: Boolean) {\n  currentUserNotification(\n    channels: $channels\n    limit: $limit\n    showDismissed: $showDismissed\n  ) {\n    uuid\n    class\n    payload\n    dismissedAt\n    __typename\n  }\n}"},{"operationName":"articleQuery","variables":{"eids":[eid]},"query":"query articleQuery($eids: [ID!]!) {\n  currentUserArticles(eids: $eids) {\n    eid\n    editorialLink {\n      ... on EditorialUrl {\n        url\n        __typename\n      }\n      ... on ForbiddenLink {\n        isForbidden\n        __typename\n      }\n      __typename\n    }\n    article {\n      ...articleFullFragment\n      __typename\n    }\n    isLearned\n    __typename\n  }\n}\n\nfragment mediaFragment on MediaAsset {\n  __typename\n  eid\n  title\n  editorialLink {\n    __typename\n    ... on EditorialUrl {\n      url\n      __typename\n    }\n    ... on ForbiddenLink {\n      isForbidden\n      __typename\n    }\n  }\n  description\n  canonicalUrl\n  aspectRatio\n  overlayUrl\n  externalAddition {\n    __typename\n    ... on ExternalAddition {\n      type\n      url\n      fallbackUrl\n      __typename\n    }\n    ... on BlockedExternalAddition {\n      type\n      __typename\n    }\n  }\n  multilayerAsset\n  copyright {\n    __typename\n    eid\n    html\n  }\n}\n\nfragment particleFields on Particle {\n  __typename\n  eid\n  partType\n  textType\n  globalStyles\n  title\n  titleReferenceMarkup\n  content\n  isSubParticle\n  titleAnchors\n  media {\n    ...mediaFragment\n    __typename\n  }\n}\n\nfragment articleFullFragment on Article {\n  __typename\n  eid\n  title\n  synonyms\n  abstract\n  knowledgeCategory\n  stages\n  knowledgeScope\n  titleAnchor\n  patientNoteEid\n  updatedDate\n  tipsAndLinks {\n    description\n    url\n    additional\n    __typename\n  }\n  content {\n    ...particleFields\n    __typename\n  }\n  references {\n    ... on ArticleReference {\n      eid\n      __typename\n    }\n    ... on AnthologyReference {\n      eid\n      __typename\n    }\n    ... on BookReference {\n      eid\n      __typename\n    }\n    ... on UrlReference {\n      eid\n      __typename\n    }\n    ... on WebMdReference {\n      eid\n      __typename\n    }\n    ... on MiscReference {\n      eid\n      __typename\n    }\n    ... on UpToDateReference {\n      eid\n      __typename\n    }\n    __typename\n  }\n}"},{"operationName":"userParticlesAndQuestionResultsQuery","variables":{"eids":[eid]},"query":"query userParticlesAndQuestionResultsQuery($eids: [ID!]!) {\n  currentUserArticles(eids: $eids) {\n    eid\n    article {\n      eid\n      __typename\n    }\n    userParticles {\n      ...userParticlesFragment\n      __typename\n    }\n    questionResults {\n      sessionEid\n      questionEid\n      isAnswerCorrect\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment userParticlesFragment on UserParticle {\n  particleEid\n  extension {\n    text\n    eid\n    ownerName\n    __typename\n  }\n  sharedExtensions {\n    text\n    eid\n    ownerName\n    __typename\n  }\n  __typename\n}"},{"operationName":"getUserStudyObjective","variables":{},"query":"query getUserStudyObjective {\n  currentStudyObjective {\n    eid\n    label\n    superset\n    __typename\n  }\n}"},{"operationName":"userConfigQuery","variables":{},"query":"query userConfigQuery {\n  currentUserConfig {\n    ...userConfigFragment\n    __typename\n  }\n}\n\nfragment taxonListFragment on Taxon {\n  eid\n  label\n  level\n  parentEid\n  __typename\n}\n\nfragment userConfigFragment on UserConfig {\n  examWhiteList {\n    ...taxonListFragment\n    __typename\n  }\n  hasConfirmedHealthCareProfession\n  __typename\n}"},{"operationName":"currentUserHighlightsOnParticles","variables":{"particleEids":[]},"query":"query currentUserHighlightsOnParticles($particleEids: [ID!]!) {\n  currentUserHighlightsOnParticles(particleEids: $particleEids) {\n    particleEid\n    highlights {\n      stampId\n      eid\n      text\n      color\n      updatedAt\n      starts\n      ends\n      __typename\n    }\n    __typename\n  }\n}"},{"operationName":"readArticleMutation","variables":{"articleEid":eid,"referrer":"library"},"query":"mutation readArticleMutation($articleEid: ID!, $referrer: ArticleReferrer) {\n  readArticle(articleEid: $articleEid, referrer: $referrer)\n}"},{"operationName":"channelNotificationsQuery","variables":{"channels":["userActionRequest"]},"query":"query channelNotificationsQuery($channels: [String!]!, $limit: Int, $showDismissed: Boolean) {\n  currentUserNotification(\n    channels: $channels\n    limit: $limit\n    showDismissed: $showDismissed\n  ) {\n    uuid\n    class\n    payload\n    dismissedAt\n    __typename\n  }\n}"}]
+
 
         with httpx.Client() as client:
             for cookie in cookies:
                 client.cookies.set(cookie['name'], cookie['value'])
-                client.get(article_url)
-                response = client.post('https://www.amboss.com/de/api/graphql', json=payload)
+            resp = client.get(article_url)
+            print(resp.status_code)
+            response = client.post('https://www.amboss.com/de/api/graphql', json=payload)
             json_data = response.json()
             return json_data
 
@@ -82,7 +84,8 @@ class AmbossScraper:
 
     def parse(self, json_data):
         data = []
-        json_article = json_data[4]['data']['currentUserArticles'][0]['article']
+        print(json_data)
+        json_article = json_data[3]['data']['currentUserArticles'][0]['article']
         formatted_json = json.dumps(json_article, indent=2)
         print(formatted_json)
         title = json_article['title'].strip()
@@ -96,16 +99,11 @@ class AmbossScraper:
         data.append({'updated_date': updated_date})
 
         for i in range(len(json_article['content'])):
-            # try:
-            #     if json_article['content'][i]['media'][1]['editorialLink']['isForbidden'] == True:
-            #         pass
-            # except:
             nav = json_article['content'][i]['title']
             data.append({'nav': nav})
 
             content = self.expand(HTMLParser(json_article['content'][i]['content']).html)
             expanded_content = HTMLParser(content)
-            # print(expanded_content.html)
             elements = expanded_content.css('*')
 
             for element in elements:
@@ -123,7 +121,6 @@ class AmbossScraper:
                     else:
                         p = element.text()
                         data.append({'p': p})
-
                 elif element.tag == 'span':
                     try:
                         if element.attributes['data-type'] == 'image':
@@ -137,7 +134,6 @@ class AmbossScraper:
                             decoded_string = decoded_bytes.decode('utf-8')
                             desc = HTMLParser(decoded_string).text().strip()
                             data.append({'img': {'url': url, 'title': title, 'desc': desc}})
-
                     except:
                         if 'case_text' in element.attributes['class']:
                             span_case_text = element.text().strip()
@@ -150,22 +146,7 @@ class AmbossScraper:
                             data.append({'span_merkspruch': span_merkspruch})
                         else:
                             continue
-
                 elif element.tag == 'li':
-                    # if element.css_first('span.leitwort'):
-                    #     li_leitwort = element.text().strip().split('\n')[0]
-                    #     data.append({'li_leitwort': li_leitwort})
-                    # # elif element.child.tag == 'ul':
-                    # #     pass
-                    # elif element.css_first('span.linksuggest'):
-                    #     li_linksuggest = element.text().strip().split('\n')[0]
-                    #     data.append({'li_linksuggest': li_linksuggest})
-                    # elif len(element.css('li')) > 1 and not (element.css_first('span.leitwort') or element.css_first('span.linksuggest')):
-                    #     # print(element.css('li'))
-                    #     continue
-                    # else:
-                    #     li = element.text().strip()
-                    #     data.append({'li': li})
                     if element.css_first('ul') != None:
                         if element.css_first('li > ul > li > ul > li') != None:
                             li1 = element.text().split('\n')[0]
@@ -176,28 +157,6 @@ class AmbossScraper:
                     else:
                         li3 = element.text().strip()
                         data.append({'li3': li3})
-
-                # elif element.tag == 'li':
-                #     if element.css_first('span.leitwort'):
-                #         li1 = element.text().strip().split('\n')[0]
-                #         data.append({'li1': li1})
-                #     elif len(element.css('li')) > 1:
-                #         li_children = element.text().split('n')
-                #         if len(li_children) > 1:
-                #             li_grandchildren = element.text().split('n')
-                #             if len(li_grandchildren) > 1:
-                #                 continue
-                #             else:
-                #                 li3 = li_grandchildren[0]
-                #                 data.append({'li3': li3})
-                #         else:
-                #             li2 = li_children[0]
-                #             data.append({'li2': li2})
-                #     else:
-                #         li1 = element.text().strip()
-                #         data.append({'li1': li1})
-
-
                 elif element.tag == 'h2':
                     h2 = element.text().strip()
                     data.append({'h2': h2})
@@ -207,15 +166,6 @@ class AmbossScraper:
                     data.append({'h3': h3})
 
                 elif element.tag == 'table':
-                    # rows = element.css('tr')
-                    # for row in rows:
-                    #     cells = row.css('td')
-                    #     cell_content = []
-                    #     for cell in cells:
-                    #         cell_content.append(cell.text().strip())
-                    # data.append({'table': cell_content})
-                        #     pdf.cell(40, 10, str(cell.text.strip()), 1)
-                        # pdf.ln()
                     table = element.html
                     data.append({'table': table})
 
@@ -239,8 +189,11 @@ class AmbossScraper:
                 file.write(response.content)
 
     def process_table_header(self, pdf, rows):
+        # Initialize merged_cell_pos and merged_cell_width
+        merged_cell_pos = 0  # or None, depending on your logic
+        merged_cell_width = 0  # Initialize merged_cell_width
 
-        # get max rows
+        # Get max rows
         for i, row in enumerate(rows):
             cells = row.css('th')
             colspans = []
@@ -251,9 +204,7 @@ class AmbossScraper:
             for cell in cells:
                 colspan = int(cell.attributes.get("colspan", 1))
                 colspans.append(colspan)
-            count_of_col = 0
-            for x in colspans:
-                count_of_col += 1
+            count_of_col = len(colspans)  # Count of columns based on colspans
 
             if i == 0:
                 for cell in cells:
@@ -263,7 +214,7 @@ class AmbossScraper:
 
                     # Calculate cell width and height based on colspan and rowspan
                     line_height = pdf.font_size
-                    cell_width = pdf.epw / count_of_col
+                    cell_width = pdf.epw / count_of_col  # Calculate cell width
                     cell_height = line_height
 
                     if colspan == 2:
@@ -273,7 +224,7 @@ class AmbossScraper:
                     if rowspan == 2:
                         cell_height = line_height * 2
 
-                    # set font
+                    # Set font
                     pdf.set_font(family='EpocaPro', style='', size=8)
                     pdf.set_text_color(0, 0, 0)
 
@@ -282,19 +233,24 @@ class AmbossScraper:
 
                     last_x = pdf.get_x()
                     last_y = pdf.get_y()
-                    pdf.line(x + pdf.l_margin, y, x + pdf.l_margin, y+max_height)
+                    pdf.line(x + pdf.l_margin, y, x + pdf.l_margin, y + max_height)
                     pdf.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
 
                     if pdf.get_y() - y > max_height:
                         max_height = pdf.get_y() - y
-                    pdf.set_xy(pdf.get_x(),last_y)
-                    pdf.line(pdf.get_x(),y,pdf.get_x(),y + max_height)
+                    pdf.set_xy(pdf.get_x(), last_y)
+                    pdf.line(pdf.get_x(), y, pdf.get_x(), y + max_height)
 
                 pdf.ln(line_height)
                 pdf.line(x + pdf.l_margin, y, x + pdf.l_margin + cell_width * count_of_col, y)
 
             else:
-                pdf.cell(merged_cell_pos)
+                # Check if merged_cell_pos has been set
+                if merged_cell_pos is not None:
+                    pdf.cell(merged_cell_pos)
+                else:
+                    pdf.cell(0)  # Or handle the case where merged_cell_pos is not set
+
                 for cell in cells:
                     colspan = int(cell.attributes.get("colspan", 1))
                     rowspan = int(cell.attributes.get("rowspan", 1))
@@ -307,30 +263,43 @@ class AmbossScraper:
                     if rowspan == 2:
                         cell_height = line_height * 2
 
-                    # set font
+                    # Set font
                     pdf.set_font(family='EpocaPro', style='', size=8)
 
                     # Calculate cell width and height based on colspan and rowspan
-                    line_height = pdf.font_size
-                    cell_width = merged_cell_width / (colspan * 2)
-                    # cell_height = line_height * rowspan
+                    if merged_cell_width > 0:
+                        cell_width = merged_cell_width / (colspan * 2)
+                    else:
+                        print(f"Warning: merged_cell_width is {merged_cell_width}. Setting cell_width to minimum of 10.")
+                        cell_width = 10  # Set a minimum width to avoid the error
 
+                    # Debugging output
+                    print(f"Cell Width: {cell_width}, Content: '{content}'")
+                    
                     # Header
                     pdf.set_font(style='B')
                     pdf.set_text_color(0, 0, 0)
                     last_x = pdf.get_x()
                     last_y = pdf.get_y()
-                    pdf.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
+
+                    # Call multi_cell with the calculated cell_width
+                    try:
+                        pdf.multi_cell(w=cell_width, max_line_height=cell_height, txt=content, align='L')
+                    except Exception as e:
+                        print(f"Error while rendering cell: {e}")
+                        # Optionally, you can set a fallback or skip this cell
+                        continue
+
                     if pdf.get_y() - y > max_height:
                         max_height = pdf.get_y() - y
-                    pdf.set_xy(pdf.get_x(),last_y)
+                    pdf.set_xy(pdf.get_x(), last_y)
                     pdf.line(pdf.get_x(), y, pdf.get_x(), y + max_height)
 
                 pdf.ln(line_height)
                 pdf.line(merged_cell_pos + pdf.l_margin, y, merged_cell_pos + pdf.l_margin + cell_width * count_of_col, y)
                 pdf.line(merged_cell_pos + pdf.l_margin, y + max_height, merged_cell_pos + pdf.l_margin + cell_width * count_of_col, y + max_height)
 
-            #last border
+            # Last border
             pdf.line(x + pdf.l_margin, y + max_height, x + pdf.l_margin + cell_width * count_of_col, y + max_height)
 
     def create_pdf(self, data):
@@ -426,21 +395,6 @@ class AmbossScraper:
                 pdf.set_font(family='EpocaPro', style='', size=12)
                 pdf.cell(w=max_width, h=14, txt=f"      \u2022", new_x='END', new_y='LAST')
                 pdf.multi_cell(w=max_width, h=14, txt=item.get('li3').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
-            # elif item.get('li_leitwort'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
-            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li_leitwort').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
-            # elif item.get('li_linksuggest'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"\u2022", new_x='RIGHT', new_y='LAST')
-            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li_linksuggest').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
-            # elif item.get('li'):
-            #     pdf.set_text_color(50, 50, 50)
-            #     pdf.set_font(family='EpocaPro', style='', size=12)
-            #     pdf.cell(w=16, h=14, txt=f"   \u2022", new_x='RIGHT', new_y='LAST')
-            #     pdf.multi_cell(w=max_width, h=14, txt=item.get('li').replace('→', '->'), align='J', new_x='LMARGIN', new_y='NEXT')
             elif item.get('h2'):
                 pdf.set_text_color(50, 50, 50)
                 pdf.set_font(family='EpocaPro', style='B', size=14)
@@ -453,22 +407,25 @@ class AmbossScraper:
                 parser = HTMLParser(item.get('table'))
                 table = parser.css_first("table")
                 rows = table.css("thead > tr")
-
-                # Process table header data and draw table header
                 self.process_table_header(pdf, rows)
 
         pdf.output(f'{output_name}.pdf')
 
     def main(self):
-        # print(f'Preaparation...')
-        # driver = self.webdriversetup()
-        # cookies = self.get_cookies(driver)
-        # print(cookies)
-        cookies = [{'name': 'AMBOSS_CONSENT', 'value': '{"Blueshift":true,"Braze":true,"Bunchbox":true,"Conversions API":true,"Datadog":true,"Facebook Pixel":true,"Facebook Social Plugins":true,"Google Ads":true,"Google Analytics":true,"Google Analytics 4":true,"Google Tag Manager":true,"Hotjar":true,"HubSpot Forms":true,"Optimizely":true,"Podigee":true,"Segment":true,"Sentry":true,"Twitter Advertising":true,"YouTube Video":true,"Zendesk":true,"cloudfront.net":true,"Jotform":true}', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1730233418, 'sameSite': 'None'}, {'name': '_hjSessionUser_1507086', 'value': 'eyJpZCI6ImE1MmI4MDU0LWFlNjQtNTBiNy1hZTc4LTA3M2MyNGYxOTdiYyIsImNyZWF0ZWQiOjE2ODcwMzM0MTg5MDIsImV4aXN0aW5nIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1718569418, 'sameSite': 'None'}, {'name': '_hjFirstSeen', 'value': '1', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1687035218, 'sameSite': 'None'}, {'name': '_hjIncludedInSessionSample_1507086', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1687033538, 'sameSite': 'None'}, {'name': '_hjSession_1507086', 'value': 'eyJpZCI6IjBhNzY4NzIyLWQyNzQtNGE2ZC04MDc1LWFmNjJjMWQyZjA2YyIsImNyZWF0ZWQiOjE2ODcwMzM0MTg5MDUsImluU2FtcGxlIjpmYWxzZX0=', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1687035218, 'sameSite': 'None'}, {'name': '_hjAbsoluteSessionInProgress', 'value': '0', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1687035218, 'sameSite': 'None'}, {'name': 'next_auth_amboss_de', 'value': '0fbe98c2e6cde2968670fb8830f30014', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': True, 'expiry': 1718655814, 'sameSite': 'None'}, {'name': 'ajs_anonymous_id', 'value': 'f3da5ae2-d64b-4def-b997-c17a67233fc9', 'path': '/', 'domain': '.amboss.com', 'secure': False, 'httpOnly': False, 'expiry': 1718569421, 'sameSite': 'Lax'}, {'name': '_dd_s', 'value': 'logs=1&id=b3bcef60-9186-4495-9dd9-ea648ed3bb17&created=1687033418257&expire=1687034321943', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1687034321, 'sameSite': 'None'}, {'name': '_bb', 'value': '648e164f16ae671935f629b2', 'path': '/', 'domain': '.amboss.com', 'secure': True, 'httpOnly': False, 'expiry': 1750105423, 'sameSite': 'None'}]
-        article_url = input('Please copy url of the article: ')
-        json_data = self.scrape(article_url, cookies)
-        data = self.parse(json_data)
-        self.create_pdf(data)
+        print(f'Preaparation...')
+        driver = self.webdriversetup()
+        cookies = self.get_cookies(driver)
+        if cookies:
+            print('[+] Cookies grabbed.')
+            print(cookies)
+            article_url = input('Please copy url of the article: ')
+            json_data = self.scrape(article_url, cookies)
+            print('[+] Json scraped.')
+            data = self.parse(json_data)
+            print('[+] Article parsed.')
+            self.create_pdf(data)
+            print('[+] PDF Created.')
+
 
 
 if __name__ == '__main__':
